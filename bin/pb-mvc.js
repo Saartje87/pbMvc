@@ -22,7 +22,7 @@
 "use strict";
 
 var $ = context.PB,
-	pbMvc = {};
+	pbMvc = {}
 
 pbMvc.Request = PB.Class({
 
@@ -30,6 +30,9 @@ pbMvc.Request = PB.Class({
 
 	cache: {},
 
+	/**
+	 *
+	 */
 	construct: function () {
 
 		if( 'onhashchange' in window ) {
@@ -46,21 +49,16 @@ pbMvc.Request = PB.Class({
 	 */
 	execute: function ( url, params ) {
 
-		var route = this.matchRoute( url );
+		params = PB.extend( this.matchRoute( url ), params );
 
-		if( !route ) {
+		if( !params ) {
 
 			alert('Request did not match any route');
 			return;
 		}
 
-		if( params ) {
-
-			route = PB.extend(route, params);
-		}
-
-		var controllerName = route.controller,
-			action = this.prefix+route.action,
+		var controllerName = params.controller,
+			action = this.prefix+params.action,
 			controller;
 
 		if( !pbMvc.Controller[controllerName] ) {
@@ -79,21 +77,17 @@ pbMvc.Request = PB.Class({
 
 		if( !controller ) {
 
-			this.cache[controllerName] = controller = new pbMvc.Controller[controllerName];
+			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 
-		controller[action]( route );
-
-		this.controller = controllerName;
-		this.action = action;
+		controller[action]( params );
 
 		return this;
 	},
 
 	matchRoute: function ( url ) {
 
-		var routes = pbMvc.Route.all(),
-			route,
+		var route,
 			uri = PB.is('String', url)
 			 	? url
 				: window.location.hash;
@@ -102,13 +96,13 @@ pbMvc.Request = PB.Class({
 		uri = uri.trim('/');
 		uri = uri.replace(/\/\/+/, '/');
 
-		for( route in routes ) {
+		PB.each(pbMvc.Route.all(), function ( key, _route ) {
 
-			if( routes.hasOwnProperty(route) && (route = routes[route].matches( uri )) ) {
+			if( route = _route.matches( uri ) ) {
 
-				break;
+				return true;
 			}
-		}
+		});
 
 		return route;
 	}
@@ -190,12 +184,13 @@ PB.extend(pbMvc.Route, {
 
 			var property = vars[i],
 				group = null,
-				modifier = '+',
+				modifier = '',
 				match = null;
 
 			if( property.charAt(0) === ':' ) {
 
 				group = '\\w';
+				modifier = '+';
 				property = vars[i].substr( 1 );
 			}
 
@@ -214,17 +209,15 @@ PB.extend(pbMvc.Route, {
 			if( !group ) {
 
 				group = property;
+				regexp += (match || group)+modifier+'\\/'+(modifier === '*' ? '?' : '');
 			} else {
 
 				properties.push( property );
+				regexp += '('+(match || group)+modifier+')\\/'+(modifier === '*' ? '?' : '');
 			}
-
-
-			regexp += '('+(match || group)+modifier+')\\/'+(modifier === '*' ? '?' : '');
-
 		}
 
-		regexp = new RegExp( regexp.replace(/\\\/\??$/, '') );
+		regexp = new RegExp( regexp.replace(/\\\/\??$/, ''), 'i' );
 
 		console.log( regexp );
 

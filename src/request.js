@@ -1,9 +1,14 @@
 pbMvc.Request = PB.Class({
-
+	
+	// Only methods with this prefix can be called
 	prefix: 'http_',
 
+	// Cache already created controllers
 	cache: {},
-
+	
+	/**
+	 * 
+	 */
 	construct: function () {
 
 		if( 'onhashchange' in window ) {
@@ -21,31 +26,27 @@ pbMvc.Request = PB.Class({
 	 */
 	execute: function ( url, params ) {
 
-		var route = this.matchRoute( url );
+		params = PB.extend( this.matchRoute( url ), params );
 
-		if( !route ) {
+		if( !params ) {
 
 			alert('Request did not match any route');
 			return;
 		}
 
-		// Guess we dont want to overwrite route vars
-		if( params ) {
-
-			route = PB.extend(route, params);
-		}
-
 		//
-		var controllerName = route.controller,
-			action = this.prefix+route.action,
+		var controllerName = params.controller,
+			action = this.prefix+params.action,
 			controller;
-
+			
+		// Does the given controller exists?
 		if( !pbMvc.Controller[controllerName] ) {
 
 			throw Error( '`'+controllerName+'` not found' );
 			return;
 		}
-
+		
+		// Does the given controller has the required action?
 		if( !pbMvc.Controller[controllerName].prototype[action] ) {
 
 			throw Error( '`'+action+'` not found in `'+controller+'`' );
@@ -55,25 +56,21 @@ pbMvc.Request = PB.Class({
 		// read cache
 		controller = this.cache[controllerName];
 
-		// Create new instance if not cached
+		// Create new instance
 		if( !controller ) {
 
-			this.cache[controllerName] = controller = new pbMvc.Controller[controllerName];
+			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 
 		// Exec requested method
-		controller[action]( route );
-
-		this.controller = controllerName;
-		this.action = action;
+		controller[action]( params );
 
 		return this;
 	},
 
 	matchRoute: function ( url ) {
 
-		var routes = pbMvc.Route.all(),
-			route,
+		var route,
 			uri = PB.is('String', url)
 			 	? url
 				: window.location.hash;
@@ -82,14 +79,15 @@ pbMvc.Request = PB.Class({
 		uri = uri.trimLeft('#');
 		uri = uri.trim('/');
 		uri = uri.replace(/\/\/+/, '/');
-
-		for( route in routes ) {
-
-			if( routes.hasOwnProperty(route) && (route = routes[route].matches( uri )) ) {
-
-				break;
+		
+		PB.each(pbMvc.Route.all(), function ( key, _route ) {
+			
+			if( route = _route.matches( uri ) ) {
+				
+				// Stop loop
+				return true;
 			}
-		}
+		});
 
 		return route;
 	}

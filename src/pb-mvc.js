@@ -23,7 +23,8 @@
 "use strict";
 
 var $ = context.PB,
-	pbMvc = {};
+	// Namespace
+	pbMvc = {}
 
 //= require "./request"
 //= require "./route"
