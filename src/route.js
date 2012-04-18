@@ -78,13 +78,15 @@ PB.extend(pbMvc.Route, {
 			
 			var property = vars[i],
 				group = null,
-				modifier = '+',
+				modifier = '',
 				match = null;
 			
 			// Word boundry?
 			if( property.charAt(0) === ':' ) {
 				
 				group = '\\w';
+				// modifier required for group
+				modifier = '+';
 				property = vars[i].substr( 1 );
 			}
 			
@@ -98,6 +100,7 @@ PB.extend(pbMvc.Route, {
 			// Specified rexexp?
 			if( /\[.*?\]$/.test( property ) ) {
 				
+				// Escape 'match'
 				match = property.substr( property.lastIndexOf('['), property.length );
 				property = property.substr( 0, property.lastIndexOf('[') );
 			}
@@ -105,20 +108,15 @@ PB.extend(pbMvc.Route, {
 			if( !group ) {
 				
 				group = property;
+				regexp += (match || group)+modifier+'\\/'+(modifier === '*' ? '?' : '');
 			} else {
 				
 				properties.push( property );
+				regexp += '('+(match || group)+modifier+')\\/'+(modifier === '*' ? '?' : '');
 			}
-			
-		//	regexp = '('+(match || group)+modifier+')';
-			
-			regexp += '('+(match || group)+modifier+')\\/'+(modifier === '*' ? '?' : '');
-			
-			// :controller
-			// (\w+)
 		}
 		
-		regexp = new RegExp( regexp.replace(/\\\/\??$/, '') );
+		regexp = new RegExp( regexp.replace(/\\\/\??$/, ''), 'i' );
 		
 		console.log( regexp );
 		
