@@ -1,13 +1,13 @@
 pbMvc.Request = PB.Class({
-	
+
 	// Only methods with this prefix can be called
 	prefix: 'http_',
 
 	// Cache already created controllers
 	cache: {},
-	
+
 	/**
-	 * 
+	 *
 	 */
 	construct: function () {
 
@@ -16,8 +16,22 @@ pbMvc.Request = PB.Class({
 			PB(window).on('hashchange', this.execute.bind(this));
 		} else {
 
-			// Timer based...
-			alert('hashchange event not implemented');
+			var old = window.location.hash,
+				current;
+
+			setInterval( function() {
+
+				current = window.location.hash;
+
+				if( old !== current ){
+
+					this.execute().bind(this);
+				}
+
+				old = current;
+
+			}.bind(this), 1);
+
 		}
 	},
 
@@ -38,14 +52,14 @@ pbMvc.Request = PB.Class({
 		var controllerName = params.controller,
 			action = this.prefix+params.action,
 			controller;
-			
+
 		// Does the given controller exists?
 		if( !pbMvc.Controller[controllerName] ) {
 
 			throw Error( '`'+controllerName+'` not found' );
 			return;
 		}
-		
+
 		// Does the given controller has the required action?
 		if( !pbMvc.Controller[controllerName].prototype[action] ) {
 
@@ -79,11 +93,11 @@ pbMvc.Request = PB.Class({
 		uri = uri.trimLeft('#');
 		uri = uri.trim('/');
 		uri = uri.replace(/\/\/+/, '/');
-		
+
 		PB.each(pbMvc.Route.all(), function ( key, _route ) {
-			
+
 			if( route = _route.matches( uri ) ) {
-				
+
 				// Stop loop
 				return true;
 			}
