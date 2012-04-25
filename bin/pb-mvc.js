@@ -30,6 +30,8 @@ pbMvc.Request = PB.Class({
 
 	cache: {},
 
+	hash: null,
+
 	/**
 	 *
 	 */
@@ -40,7 +42,7 @@ pbMvc.Request = PB.Class({
 			PB(window).on('hashchange', this.execute.bind(this));
 		} else {
 
-			alert('hashchange event not implemented');
+			setInterval( this.hashCheck.bind(this), 250 );
 		}
 	},
 
@@ -48,6 +50,11 @@ pbMvc.Request = PB.Class({
 	 *
 	 */
 	execute: function ( url, params ) {
+
+		if( !PB.is('String', url) ) {
+
+			url = window.location.hash;
+		}
 
 		params = PB.extend( this.matchRoute( url ), params );
 
@@ -87,24 +94,34 @@ pbMvc.Request = PB.Class({
 
 	matchRoute: function ( url ) {
 
-		var route,
-			uri = PB.is('String', url)
-			 	? url
-				: window.location.hash;
+		var route;
 
-		uri = uri.trimLeft('#');
-		uri = uri.trim('/');
-		uri = uri.replace(/\/\/+/, '/');
+		url = url.trimLeft('#');
+		url = url.trim('/');
+		url = url.replace(/\/\/+/, '/');
 
 		PB.each(pbMvc.Route.all(), function ( key, _route ) {
 
-			if( route = _route.matches( uri ) ) {
+			if( route = _route.matches( url ) ) {
 
 				return true;
 			}
 		});
 
 		return route;
+	},
+
+	/**
+	 * Fallback 'event' for older browsers
+	 */
+	hashCheck: function () {
+
+		if( window.location.hash !== this.hash ) {
+
+			this.hash = window.location.hash;
+
+			this.execute();
+		}
 	}
 });
 /**
@@ -223,6 +240,43 @@ PB.extend(pbMvc.Route, {
 
 		return pbMvc.Route.routes[name] = new pbMvc.Route( name, regexp, properties );
 	}
+});
+
+
+
+PB.extend(pbMvc.Route, {
+
+
+	history: function( check ){
+
+		if( check ) {
+
+			this.journey = [];
+
+			PB(document).find('a').forEach(function ( el ) {
+
+				el.on('click', function ( e ) {
+
+					e.stop();
+
+					current = window.location.hash;
+
+					this.journey.push( [ current, el ] );
+
+					window.location = el.attr('href');
+
+				}.bind(this));
+
+			}.bind(this));
+		}
+
+		return ( function() {
+
+				return this.journey;
+
+		}.bind(this)());
+	}
+
 });
 /**
  * Abstract controller is based on Pluxbox, rewrite for own purpose

@@ -5,6 +5,9 @@ pbMvc.Request = PB.Class({
 
 	// Cache already created controllers
 	cache: {},
+	
+	// 
+	hash: null,
 
 	/**
 	 *
@@ -12,26 +15,11 @@ pbMvc.Request = PB.Class({
 	construct: function () {
 
 		if( 'onhashchange' in window ) {
-
+			
 			PB(window).on('hashchange', this.execute.bind(this));
 		} else {
-
-			var old = window.location.hash,
-				current;
-
-			setInterval( function() {
-
-				current = window.location.hash;
-
-				if( old !== current ){
-
-					this.execute().bind(this);
-				}
-
-				old = current;
-
-			}.bind(this), 1);
-
+			
+			setInterval( this.hashCheck.bind(this), 250 );
 		}
 	},
 
@@ -39,7 +27,12 @@ pbMvc.Request = PB.Class({
 	 *
 	 */
 	execute: function ( url, params ) {
-
+		
+		if( !PB.is('String', url) ) {
+			
+			url = window.location.hash;
+		}
+		
 		params = PB.extend( this.matchRoute( url ), params );
 
 		if( !params ) {
@@ -84,19 +77,16 @@ pbMvc.Request = PB.Class({
 
 	matchRoute: function ( url ) {
 
-		var route,
-			uri = PB.is('String', url)
-			 	? url
-				: window.location.hash;
+		var route;
 
 		// Trim #
-		uri = uri.trimLeft('#');
-		uri = uri.trim('/');
-		uri = uri.replace(/\/\/+/, '/');
+		url = url.trimLeft('#');
+		url = url.trim('/');
+		url = url.replace(/\/\/+/, '/');
 
 		PB.each(pbMvc.Route.all(), function ( key, _route ) {
 
-			if( route = _route.matches( uri ) ) {
+			if( route = _route.matches( url ) ) {
 
 				// Stop loop
 				return true;
@@ -104,5 +94,19 @@ pbMvc.Request = PB.Class({
 		});
 
 		return route;
+	},
+	
+	/**
+	 * Fallback 'event' for older browsers
+	 */
+	hashCheck: function () {
+		
+		// Hash changed?
+		if( window.location.hash !== this.hash ) {
+			
+			this.hash = window.location.hash;
+
+			this.execute();
+		}
 	}
 });
