@@ -114,11 +114,15 @@ PB.extend(pbMvc.Route, {
 				properties.push( property );
 				regexp += '('+(match || group)+modifier+')\\/'+(modifier === '*' ? '?' : '');
 			}
+			
+			// Next is optional? remove slash
+			if( vars[i+1] && /[\*\+]/.test( vars[i+1] ) && !/[\*\+]$/.test( vars[i] ) ) {
+				
+				regexp += '?';
+			}
 		}
 
 		regexp = new RegExp( regexp.replace(/\\\/\??$/, ''), 'i' );
-
-		console.log( regexp );
 
 		return pbMvc.Route.routes[name] = new pbMvc.Route( name, regexp, properties );
 	}

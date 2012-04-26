@@ -8,12 +8,22 @@ pbMvc.Request = PB.Class({
 	
 	// 
 	hash: null,
+	
+	//
+	scroll: null,
 
 	/**
 	 *
 	 */
 	construct: function () {
-
+		
+		this.scroll = PB(document).getScroll();
+		
+		PB(document).on('scroll', function () {
+			
+			this.scroll = PB(document).getScroll();
+		}.bind(this));
+		
 		if( 'onhashchange' in window ) {
 			
 			PB(window).on('hashchange', this.execute.bind(this));
@@ -63,21 +73,34 @@ pbMvc.Request = PB.Class({
 		// read cache
 		controller = this.cache[controllerName];
 
-		// Create new instance
 		if( !controller ) {
-
+			
+			// Create new instance
 			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 
-		// Exec requested method
+		// Execute the requested method
 		controller[action]( params );
+		
+		// 
+	//	setTimeout(function() {
+			
+		//	PB(document).scrollTop( this.scroll.top )
+		//		.scrollLeft( this.scroll.left );
+	//	}.bind(this), 50);
 
 		return this;
 	},
-
+	
+	/**
+	 * Return te matches route or null if none matched
+	 *
+	 * @param string
+	 * @param object route parts
+	 */
 	matchRoute: function ( url ) {
 
-		var route;
+		var parts;
 
 		// Trim #
 		url = url.trimLeft('#');
@@ -86,14 +109,16 @@ pbMvc.Request = PB.Class({
 
 		PB.each(pbMvc.Route.all(), function ( key, _route ) {
 
-			if( route = _route.matches( url ) ) {
+			if( parts = _route.matches( url ) ) {
 
 				// Stop loop
 				return true;
 			}
+			
+			parts = null;
 		});
 
-		return route;
+		return parts;
 	},
 	
 	/**

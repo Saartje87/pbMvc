@@ -28,8 +28,10 @@ var $ = context.PB,
 
 //= require "./request"
 //= require "./route"
+//= require "./model"
+//= require "./view"
 //= require "./controller"
 
-return $.pbMvc = pbMvc;
+return $.App = pbMvc;
 });
 

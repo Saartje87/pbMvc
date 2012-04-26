@@ -32,10 +32,19 @@ pbMvc.Request = PB.Class({
 
 	hash: null,
 
+	scroll: null,
+
 	/**
 	 *
 	 */
 	construct: function () {
+
+		this.scroll = PB(document).getScroll();
+
+		PB(document).on('scroll', function () {
+
+			this.scroll = PB(document).getScroll();
+		}.bind(this));
 
 		if( 'onhashchange' in window ) {
 
@@ -89,12 +98,20 @@ pbMvc.Request = PB.Class({
 
 		controller[action]( params );
 
+
+
 		return this;
 	},
 
+	/**
+	 * Return te matches route or null if none matched
+	 *
+	 * @param string
+	 * @param object route parts
+	 */
 	matchRoute: function ( url ) {
 
-		var route;
+		var parts;
 
 		url = url.trimLeft('#');
 		url = url.trim('/');
@@ -102,13 +119,15 @@ pbMvc.Request = PB.Class({
 
 		PB.each(pbMvc.Route.all(), function ( key, _route ) {
 
-			if( route = _route.matches( url ) ) {
+			if( parts = _route.matches( url ) ) {
 
 				return true;
 			}
+
+			parts = null;
 		});
 
-		return route;
+		return parts;
 	},
 
 	/**
@@ -232,11 +251,14 @@ PB.extend(pbMvc.Route, {
 				properties.push( property );
 				regexp += '('+(match || group)+modifier+')\\/'+(modifier === '*' ? '?' : '');
 			}
+
+			if( vars[i+1] && /[\*\+]/.test( vars[i+1] ) && !/[\*\+]$/.test( vars[i] ) ) {
+
+				regexp += '?';
+			}
 		}
 
 		regexp = new RegExp( regexp.replace(/\\\/\??$/, ''), 'i' );
-
-		console.log( regexp );
 
 		return pbMvc.Route.routes[name] = new pbMvc.Route( name, regexp, properties );
 	}
@@ -278,11 +300,168 @@ PB.extend(pbMvc.Route, {
 	}
 
 });
+pbMvc.Model = PB.Class({
+
+	url: '/{name}/rest/{id}.json?recursive=1',
+
+	construct: function ( id ) {
+
+		this.data = {};
+
+		this.loaded = false;
+
+		if( id !== undefined ) {
+
+			this.set('id', id)
+				.read( id );
+		}
+	},
+
+	set: function ( key, value ) {
+
+		this.data[key] = value;
+
+		return this;
+	},
+
+	unset: function ( key ) {
+
+		delete this.data[key];
+
+		return this;
+	},
+
+	get: function ( key ) {
+
+		return this.data[key];
+	},
+
+	isValid: function () {
+
+
+	},
+
+	error: function () {
+
+
+	},
+
+	/**
+	 * Process the.data into a nice object, right for storing it on the server
+	 */
+	process: function () {
+
+	},
+
+	read: function () {
+
+		if( this.loaded ) {
+
+			return;
+		}
+
+		var url = this.url.replace('{name}', this.name).replace('{id}', this.get('id'));
+
+		(new PB.Request({
+
+			url: url,
+			async: false
+		})).on('end', function ( t, code ){
+
+			switch ( code ) {
+
+				case 200:
+					if( !t.responseJSON ) {
+
+						throw new Exception('No valid JSON response');
+					}
+
+					this.set( t.responseJSON );
+					break;
+
+				default:
+					throw new Exception('Error in reading `Model '+this.name+'`');
+					break;
+			}
+		}.bind(this)).send();
+
+		return this;
+	},
+
+	save: function () {
+
+
+	},
+
+	remove: function () {
+
+
+	}
+});
+
+pbMvc.View = PB.Class({
+
+	construct: function ( filename ) {
+
+		this.filename = filename;
+	},
+
+	toString: function () {
+
+		return this.render();
+	},
+
+	render: function () {
+
+		var capture = PB.App.View.cache[this.filename];
+
+		if( !capture ) {
+
+			PB.App.View.cache[this.filename] = capture = PB.App.View.load( this.filename );
+		}
+
+		return capture;
+	}
+});
+
+PB.overwrite(pbMvc.View, {
+
+	cache: {},
+
+	load: function ( url ) {
+
+		var request = new PB.Request({
+
+				url: url,
+				async: false,
+				data: {
+
+					ac: '.VERSION'
+				}
+			}),
+			response;
+
+		request.on('end', function ( t, code ) {
+
+			switch( code ) {
+
+				case 404:
+					throw new Error('View file `'+url+'` not found');
+					break;
+
+				default:
+					response = t.responseText;
+			}
+		}).send();
+
+		return response;
+	}
+});
 /**
  * Abstract controller is based on Pluxbox, rewrite for own purpose
  */
 pbMvc.Controller = PB.Class({});
 
-return $.pbMvc = pbMvc;
+return $.App = pbMvc;
 });
 
