@@ -8,22 +8,12 @@ pbMvc.Request = PB.Class({
 	
 	// 
 	hash: null,
-	
-	//
-	scroll: null,
 
 	/**
 	 *
 	 */
 	construct: function () {
-		
-		this.scroll = PB(document).getScroll();
-		
-		PB(document).on('scroll', function () {
-			
-			this.scroll = PB(document).getScroll();
-		}.bind(this));
-		
+				
 		if( 'onhashchange' in window ) {
 			
 			PB(window).on('hashchange', this.execute.bind(this));
@@ -81,13 +71,6 @@ pbMvc.Request = PB.Class({
 
 		// Execute the requested method
 		controller[action]( params );
-		
-		// 
-	//	setTimeout(function() {
-			
-		//	PB(document).scrollTop( this.scroll.top )
-		//		.scrollLeft( this.scroll.left );
-	//	}.bind(this), 50);
 
 		return this;
 	},

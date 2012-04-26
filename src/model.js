@@ -24,6 +24,11 @@ pbMvc.Model = PB.Class({
 		return this;
 	},
 	
+	isset: function ( key ) {
+		
+		return this.data[key] !== undefined;
+	},
+	
 	unset: function ( key ) {
 		
 		delete this.data[key];

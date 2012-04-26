@@ -6,9 +6,10 @@ pbMvc.View = PB.Class({
 	/**
 	 *
 	 */
-	construct: function ( filename ) {
+	construct: function ( filename, expire ) {
 		
 		this.filename = filename;
+		this.expire = expire;
 	},
 	
 	/**
@@ -24,32 +25,35 @@ pbMvc.View = PB.Class({
 	 */
 	render: function () {
 		
-		var capture = PB.App.View.cache[this.filename];
-		
-		if( !capture ) {
-			
-			PB.App.View.cache[this.filename] = capture = PB.App.View.load( this.filename );
-		}
-		
-		return capture;
+		return PB.App.View.fetch( this.filename, this.expire );
 	}
 });
 
 PB.overwrite(pbMvc.View, {
 	
 	// Anti cache mechanism for ajax requests
-	version: '.VERSION'
+	version: 'VERSION',
 	
 	// Stores the request result
 	cache: {},
 	
+	// Default cache time in seconds
+	expire: 3600,
+	
 	/**
-	 * 
+	 * Loads the given view synchrone
+	 *
+	 * @param string
+	 * @return string
 	 */
-	load: function ( url ) {
+	fetch: function ( url, expire ) {
 		
-		var response,
-			request = new PB.Request({
+		if( pbMvc.View.cache[url] && pbMvc.View.cache[url].expire > Date.now() ) {
+			
+			return pbMvc.View.cache[url].text;
+		}
+		
+		var request = new PB.Request({
 			
 				url: url,
 				async: false,
@@ -59,6 +63,11 @@ PB.overwrite(pbMvc.View, {
 				}
 			});
 		
+		pbMvc.View.cache[url] = {
+			
+			expire: Date.now() + (expire === undefined ? pbMvc.View.expire*1000 : expire)
+		};
+		
 		request.on('end', function ( t, code ) {
 			
 			switch( code ) {
@@ -67,11 +76,36 @@ PB.overwrite(pbMvc.View, {
 					throw new Error('View file `'+url+'` not found');
 					break;
 				
+				case 200:
+					pbMvc.View.cache[url].text = t.responseText;
+					break;
+				
 				default:
-					response = t.responseText;
+					throw new Error('Response didn`t return a valid code, returned '+code);
 			}
 		}).send();
 		
-		return response;
+		if( !pbMvc.View.collecting ) {
+			
+			setInterval(function () {
+				
+				pbMvc.View.collectGarbage();
+			}, 30000);
+		}
+		
+		return pbMvc.View.cache[url].text;
+	},
+	
+	collectGarbage: function () {
+		
+		var now = Date.now();
+	
+		PB.each(pbMvc.View.cache, function ( url, data ) {
+			
+			if( data.expire > now ) {
+
+				delete pbMvc.View.cache[url];
+			}
+		});
 	}
 });
