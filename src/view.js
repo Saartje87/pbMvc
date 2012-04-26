@@ -1,15 +1,27 @@
+/**
+ * 
+ */
 pbMvc.View = PB.Class({
 	
+	/**
+	 *
+	 */
 	construct: function ( filename ) {
 		
 		this.filename = filename;
 	},
 	
+	/**
+	 *
+	 */
 	toString: function () {
 		
 		return this.render();
 	},
 	
+	/**
+	 *
+	 */
 	render: function () {
 		
 		var capture = PB.App.View.cache[this.filename];
@@ -25,20 +37,27 @@ pbMvc.View = PB.Class({
 
 PB.overwrite(pbMvc.View, {
 	
+	// Anti cache mechanism for ajax requests
+	version: '.VERSION'
+	
+	// Stores the request result
 	cache: {},
 	
+	/**
+	 * 
+	 */
 	load: function ( url ) {
 		
-		var request = new PB.Request({
+		var response,
+			request = new PB.Request({
 			
 				url: url,
 				async: false,
 				data: {
 
-					ac: '.VERSION'
+					ac: pbMvc.View.version
 				}
-			}),
-			response;
+			});
 		
 		request.on('end', function ( t, code ) {
 			
