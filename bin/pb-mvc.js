@@ -60,7 +60,7 @@ pbMvc.Request = PB.Class({
 
 		if( !params ) {
 
-			alert('Request did not match any route');
+			console.log('Request did not match any route');
 			return;
 		}
 
@@ -199,52 +199,20 @@ PB.extend(pbMvc.Route, {
 			throw Error('Already declared route::'+name);
 		}
 
-		var vars = route.split('/'),
+		var parts = route.split('/'),
 			properties = [],
 			property,
 			i = 0,
 			regexp = '^';
 
-		for( i = 0; i < vars.length; i++ ) {
+		for( i = 0; i < parts.length; i++ ) {
 
-			var property = vars[i],
-				group = null,
-				modifier = '',
-				match = null;
+			if( property = parts[i].match(/^:([a-z0-9_-]+)/i) ) {
 
-			if( property.charAt(0) === ':' ) {
-
-				group = '\\w';
-				modifier = '+';
-				property = vars[i].substr( 1 );
+				properties.push( property[1] );
 			}
 
-			if( /[\*\+]/.test( property.charAt(property.length - 1) ) ) {
-
-				modifier = property.substr( property.length - 1 );
-				property = property.substr( 0, property.length - 1 );
-			}
-
-			if( /\[.*?\]$/.test( property ) ) {
-
-				match = property.substr( property.lastIndexOf('['), property.length );
-				property = property.substr( 0, property.lastIndexOf('[') );
-			}
-
-			if( !group ) {
-
-				group = property;
-				regexp += (match || group)+modifier+'\\/'+(modifier === '*' ? '?' : '');
-			} else {
-
-				properties.push( property );
-				regexp += '('+(match || group)+modifier+')\\/'+(modifier === '*' ? '?' : '');
-			}
-
-			if( vars[i+1] && /[\*\+]/.test( vars[i+1] ) && !/[\*\+]$/.test( vars[i] ) ) {
-
-				regexp += '?';
-			}
+			regexp += parseStringPart( parts[i], parts[i+1] );
 		}
 
 		regexp = new RegExp( regexp.replace(/\\\/\??$/, ''), 'i' );
@@ -253,6 +221,39 @@ PB.extend(pbMvc.Route, {
 	}
 });
 
+function parseStringPart ( part, nextPart ) {
+
+	var regexp = '';
+
+	if( part.charAt(0) === ':' ) {
+
+		var match;
+
+		regexp += '(';
+
+		if( match = part.match(/\[(.*?)\]/) ) {
+
+			regexp += match[0];
+		} else {
+
+			regexp += '[a-zA-Z0-9_-]';
+		}
+
+		regexp += /\*$/.test( part ) ? '*' : '+';
+
+		regexp += ')';
+	} else {
+
+		regexp += part;
+	}
+
+	if( nextPart ) {
+
+		regexp += '/'+(/\*$/.test( nextPart ) ? '?' : '+');
+	}
+
+	return regexp;
+}
 
 
 PB.extend(pbMvc.Route, {

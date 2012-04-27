@@ -21,7 +21,7 @@ pbMvc.Route = PB.Class({
 
 		var match = uri.match( this._regex ),
 			params = PB.overwrite({}, this._defaults || {});	// Clone defaults
-
+			
 		if( !match ) {
 
 			return false;
@@ -68,58 +68,20 @@ PB.extend(pbMvc.Route, {
 		}
 
 		// Transform string into regexp
-		var vars = route.split('/'),
+		var parts = route.split('/'),
 			properties = [],
 			property,
 			i = 0,
 			regexp = '^';
 
-		for( i = 0; i < vars.length; i++ ) {
-
-			var property = vars[i],
-				group = null,
-				modifier = '',
-				match = null;
-
-			// Word boundry?
-			if( property.charAt(0) === ':' ) {
-
-				group = '\\w';
-				// modifier required for group
-				modifier = '+';
-				property = vars[i].substr( 1 );
-			}
-
-			// Modifier?
-			if( /[\*\+]/.test( property.charAt(property.length - 1) ) ) {
-
-				modifier = property.substr( property.length - 1 );
-				property = property.substr( 0, property.length - 1 );
-			}
-
-			// Specified rexexp?
-			if( /\[.*?\]$/.test( property ) ) {
-
-				// Escape 'match'
-				match = property.substr( property.lastIndexOf('['), property.length );
-				property = property.substr( 0, property.lastIndexOf('[') );
-			}
-
-			if( !group ) {
-
-				group = property;
-				regexp += (match || group)+modifier+'\\/'+(modifier === '*' ? '?' : '');
-			} else {
-
-				properties.push( property );
-				regexp += '('+(match || group)+modifier+')\\/'+(modifier === '*' ? '?' : '');
+		for( i = 0; i < parts.length; i++ ) {
+			
+			if( property = parts[i].match(/^:([a-z0-9_-]+)/i) ) {
+				
+				properties.push( property[1] );
 			}
 			
-			// Next is optional? remove slash
-			if( vars[i+1] && /[\*\+]/.test( vars[i+1] ) && !/[\*\+]$/.test( vars[i] ) ) {
-				
-				regexp += '?';
-			}
+			regexp += parseStringPart( parts[i], parts[i+1] );
 		}
 
 		regexp = new RegExp( regexp.replace(/\\\/\??$/, ''), 'i' );
@@ -128,6 +90,40 @@ PB.extend(pbMvc.Route, {
 	}
 });
 
+function parseStringPart ( part, nextPart ) {
+	
+	var regexp = '';
+	
+	if( part.charAt(0) === ':' ) {
+		
+		var match;
+		
+		regexp += '(';
+		
+		if( match = part.match(/\[(.*?)\]/) ) {
+			
+			regexp += match[0];
+		} else {
+			
+			// Default
+			regexp += '[a-zA-Z0-9_-]';
+		}
+		
+		regexp += /\*$/.test( part ) ? '*' : '+';
+		
+		regexp += ')';
+	} else {
+		
+		regexp += part;
+	}
+	
+	if( nextPart ) {
+		
+		regexp += '/'+(/\*$/.test( nextPart ) ? '?' : '+');
+	}
+	
+	return regexp;
+}
 
 
 // History of the address + trigger

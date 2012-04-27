@@ -37,7 +37,7 @@ pbMvc.Request = PB.Class({
 
 		if( !params ) {
 
-			alert('Request did not match any route');
+			console.log('Request did not match any route');
 			return;
 		}
 
