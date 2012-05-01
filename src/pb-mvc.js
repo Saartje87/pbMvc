@@ -23,14 +23,22 @@
 "use strict";
 
 var $ = context.PB,
-	// Namespace
-	pbMvc = {}
+	pbMvc = {};
 
 //= require "./request"
 //= require "./route"
 //= require "./model"
 //= require "./view"
 //= require "./controller"
+
+/**
+ * Init MVC when all files are loaded
+ */
+$(window).once('load', function () {
+	
+	(new PB.App.Request())
+		.execute();
+});
 
 return $.App = pbMvc;
 });

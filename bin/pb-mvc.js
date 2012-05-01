@@ -22,7 +22,7 @@
 "use strict";
 
 var $ = context.PB,
-	pbMvc = {}
+	pbMvc = {};
 
 pbMvc.Request = PB.Class({
 
@@ -480,15 +480,16 @@ PB.overwrite(pbMvc.View, {
 
 		if( !pbMvc.View.collecting ) {
 
-			setInterval(function () {
-
-				pbMvc.View.collectGarbage();
-			}, 30000);
+			setInterval(pbMvc.View.collectGarbage, 30000);
 		}
 
 		return pbMvc.View.cache[url].text;
 	},
 
+	/**
+	 * Checks whether entry is expired and removes the entry
+	 * This method should only be called internally
+	 */
 	collectGarbage: function () {
 
 		var now = Date.now();
@@ -506,6 +507,15 @@ PB.overwrite(pbMvc.View, {
  * Abstract controller is based on Pluxbox, rewrite for own purpose
  */
 pbMvc.Controller = PB.Class({});
+
+/**
+ * Init MVC when all files are loaded
+ */
+$(window).once('load', function () {
+
+	(new PB.App.Request())
+		.execute();
+});
 
 return $.App = pbMvc;
 });
