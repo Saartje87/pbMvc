@@ -85,17 +85,19 @@ PB.overwrite(pbMvc.View, {
 			}
 		}).send();
 		
+		// Start garbage collecting
 		if( !pbMvc.View.collecting ) {
 			
-			setInterval(function () {
-				
-				pbMvc.View.collectGarbage();
-			}, 30000);
+			setInterval(pbMvc.View.collectGarbage, 30000);
 		}
 		
 		return pbMvc.View.cache[url].text;
 	},
 	
+	/**
+	 * Checks whether entry is expired and removes the entry
+	 * This method should only be called internally
+	 */
 	collectGarbage: function () {
 		
 		var now = Date.now();
