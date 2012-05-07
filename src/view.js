@@ -15,14 +15,6 @@ pbMvc.View = PB.Class({
 	/**
 	 *
 	 */
-	toString: function () {
-		
-		return this.render();
-	},
-	
-	/**
-	 *
-	 */
 	render: function () {
 		
 		return PB.App.View.fetch( this.filename, this.expire );
