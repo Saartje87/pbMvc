@@ -2,7 +2,7 @@
  * pbMvc JavaScript Lib v0.0.1
  * https://github.com/Saartje87/pbMvc
  *
- * copyright 1012, Pluxbox
+ * copyright 2012, Pluxbox
  * MIT License
  */
 (function ( name, context, definition ) {
@@ -265,21 +265,22 @@ PB.extend(pbMvc.Route, {
 
 			this.journey = [];
 
-			PB(document).find('a').forEach(function ( el ) {
+			PB(document).on('click', function ( e ) {
 
-				el.on('click', function ( e ) {
+				var el = $(e.target);
+
+				if ( el.nodeName === 'A' ) {
 
 					e.stop();
 
-					current = window.location.hash;
-
-					this.journey.push( [ current, el ] );
+					this.journey.push( [ window.location.hash, el ] );
 
 					window.location = el.attr('href');
 
-				}.bind(this));
+				}
 
 			}.bind(this));
+
 		}
 
 		return ( function() {

@@ -21,7 +21,7 @@ pbMvc.Route = PB.Class({
 
 		var match = uri.match( this._regex ),
 			params = PB.overwrite({}, this._defaults || {});	// Clone defaults
-			
+
 		if( !match ) {
 
 			return false;
@@ -75,12 +75,12 @@ PB.extend(pbMvc.Route, {
 			regexp = '^';
 
 		for( i = 0; i < parts.length; i++ ) {
-			
+
 			if( property = parts[i].match(/^:([a-z0-9_-]+)/i) ) {
-				
+
 				properties.push( property[1] );
 			}
-			
+
 			regexp += parseStringPart( parts[i], parts[i+1] );
 		}
 
@@ -91,37 +91,37 @@ PB.extend(pbMvc.Route, {
 });
 
 function parseStringPart ( part, nextPart ) {
-	
+
 	var regexp = '';
-	
+
 	if( part.charAt(0) === ':' ) {
-		
+
 		var match;
-		
+
 		regexp += '(';
-		
+
 		if( match = part.match(/\[(.*?)\]/) ) {
-			
+
 			regexp += match[0];
 		} else {
-			
+
 			// Default
 			regexp += '[a-zA-Z0-9_-]';
 		}
-		
+
 		regexp += /\*$/.test( part ) ? '*' : '+';
-		
+
 		regexp += ')';
 	} else {
-		
+
 		regexp += part;
 	}
-	
+
 	if( nextPart ) {
-		
+
 		regexp += '/'+(/\*$/.test( nextPart ) ? '?' : '+');
 	}
-	
+
 	return regexp;
 }
 
@@ -137,22 +137,22 @@ PB.extend(pbMvc.Route, {
 
 			this.journey = [];
 
-			PB(document).find('a').forEach(function ( el ) {
+			PB(document).on('click', function ( e ) {
 
-				el.on('click', function ( e ) {
+				var el = $(e.target);
+
+				if ( el.nodeName === 'A' ) {
 
 					e.stop();
 
-					current = window.location.hash;
-
-					this.journey.push( [ current, el ] );
+					this.journey.push( [ window.location.hash, el ] );
 
 					window.location = el.attr('href');
 
-				}.bind(this));
+				}
 
-				// pbMvc.Route.history = this.history;
 			}.bind(this));
+
 		}
 
 		return ( function() {
