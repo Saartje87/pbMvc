@@ -1,9 +1,27 @@
 pbMvc.Model = PB.Class({
 	
+	// 
+	model: null,
+	
+	// 
+	name: null,
+	
 	// Url template, default Core5.1
 	url: '/{name}/rest/{id}.json?recursive=1',
 	
 	construct: function ( id ) {
+		
+		if( !this.name ) {
+			
+			throw new Error('Name required');
+		}
+		
+		if( !this.model ) {
+			
+			throw new Error('Model required for '+this.name);
+		}
+		
+		this.model.id = { type: 'number' };
 		
 		this.data = {};
 		
@@ -19,7 +37,14 @@ pbMvc.Model = PB.Class({
 	// Handles key=>value or object
 	set: function ( key, value ) {
 		
-		this.data[key] = value;
+		// Handle object
+		if( PB.is('Object', key) ) {
+			
+			PB.each(key, this.set, this);
+		} else {
+			
+			this.data[key] = value;
+		}
 		
 		return this;
 	},
@@ -36,10 +61,15 @@ pbMvc.Model = PB.Class({
 		return this;
 	},
 	
-	// Retrieves the data[key] or whole object
+	/**
+	 * Retrieve entry or all data
+	 *
+	 * @param string
+	 * @return mixed
+	 */
 	get: function ( key ) {
 		
-		return this.data[key];
+		return key ? this.data[key] : this.data;
 	},
 	
 	isValid: function () {
@@ -55,9 +85,38 @@ pbMvc.Model = PB.Class({
 	/**
 	 * Process the.data into a nice object, right for storing it on the server
 	 */
-	process: function () {
+	preprocess: function () {
 		
 		// User this.set / this.get / this.unset
+	},
+	
+	// Return REST url
+	getUrl: function () {
+		
+		return this.url.replace('{name}', this.name).replace('{id}', this.get('id') || '');
+	},
+	
+	//
+	getPostData: function () {
+		
+		var data = {};
+		
+		PB.each(this.data, function ( key, value ) {
+			
+			if( key in this.model ) {
+				
+				switch ( this.model[key].type ) {
+					
+					case 'date':
+					//	value = PB.is('Date', value) ? value.format() : value;
+						break;
+				}
+				
+				data[key] = value;
+			}
+		}, this);
+		
+		return data;
 	},
 	
 	read: function () {
@@ -67,11 +126,9 @@ pbMvc.Model = PB.Class({
 			return;
 		}
 		
-		var url = this.url.replace('{name}', this.name).replace('{id}', this.get('id'));
-		
 		(new PB.Request({
 
-			url: url,
+			url: this.getUrl(),
 			async: false
 		})).on('end', function ( t, code ){
 
@@ -80,14 +137,14 @@ pbMvc.Model = PB.Class({
 				case 200:
 					if( !t.responseJSON ) {
 						
-						throw new Exception('No valid JSON response');
+						throw new Error('No valid JSON response');
 					}
 				
 					this.set( t.responseJSON );
 					break;
 
 				default:
-					throw new Exception('Error in reading `Model '+this.name+'`');
+					throw new Error('Error in reading `Model '+this.name+'`');
 					break;
 			}
 		}.bind(this)).send();
@@ -97,12 +154,31 @@ pbMvc.Model = PB.Class({
 	
 	save: function () {
 		
-		
+		(new PB.Request({
+			
+			url: this.getUrl(),
+			async: false,
+			method: this.get('id') ? 'PUT' : 'POST',
+			data: {
+				__data: JSON.stringify(this.getPostData())
+			}
+		})).send();
 	},
 	
 	remove: function () {
 		
+		// Nothing to delete
+		if( !this.get('id') ) {
+			
+			return;
+		}
 		
+		(new PB.Request({
+			
+			url: this.getUrl(),
+			async: false,
+			method: 'DELETE'
+		})).send();
 	}
 });
 
