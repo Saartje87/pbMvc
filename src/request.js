@@ -42,9 +42,10 @@ pbMvc.Request = PB.Class({
 		}
 
 		//
-		var controllerName = params.controller,
-			action = this.prefix+params.action,
-			controller;
+		var action = this.prefix+params.action,
+			controllerName = params.controller,
+			controller,
+			proto;
 
 		// Does the given controller exists?
 		if( !pbMvc.Controller[controllerName] ) {
@@ -52,9 +53,11 @@ pbMvc.Request = PB.Class({
 			throw Error( '`'+controllerName+'` not found' );
 			return;
 		}
+		
+		proto = pbMvc.Controller[controllerName].prototype;
 
 		// Does the given controller has the required action?
-		if( !pbMvc.Controller[controllerName].prototype[action] ) {
+		if( !proto[action] ) {
 
 			throw Error( '`'+action+'` not found in `'+controller+'`' );
 			return;
@@ -68,9 +71,19 @@ pbMvc.Request = PB.Class({
 			// Create new instance
 			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
-
+		
+		if( PB.is('Function', proto.before) ) {
+			
+			controller.before( params );
+		}
+		
 		// Execute the requested method
 		controller[action]( params );
+		
+		if( PB.is('Function', proto.after) ) {
+			
+			controller.after( params );
+		}
 
 		return this;
 	},

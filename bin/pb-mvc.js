@@ -2,7 +2,7 @@
  * pbMvc JavaScript Lib v0.0.1
  * https://github.com/Saartje87/pbMvc
  *
- * copyright 2012, Pluxbox
+ * copyright 1012, Pluxbox
  * MIT License
  */
 (function ( name, context, definition ) {
@@ -64,9 +64,10 @@ pbMvc.Request = PB.Class({
 			return;
 		}
 
-		var controllerName = params.controller,
-			action = this.prefix+params.action,
-			controller;
+		var action = this.prefix+params.action,
+			controllerName = params.controller,
+			controller,
+			proto;
 
 		if( !pbMvc.Controller[controllerName] ) {
 
@@ -74,7 +75,9 @@ pbMvc.Request = PB.Class({
 			return;
 		}
 
-		if( !pbMvc.Controller[controllerName].prototype[action] ) {
+		proto = pbMvc.Controller[controllerName].prototype;
+
+		if( !proto[action] ) {
 
 			throw Error( '`'+action+'` not found in `'+controller+'`' );
 			return;
@@ -87,7 +90,17 @@ pbMvc.Request = PB.Class({
 			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 
+		if( PB.is('Function', proto.before) ) {
+
+			controller.before( params );
+		}
+
 		controller[action]( params );
+
+		if( PB.is('Function', proto.after) ) {
+
+			controller.after( params );
+		}
 
 		return this;
 	},
