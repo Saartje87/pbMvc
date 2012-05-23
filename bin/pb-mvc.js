@@ -339,15 +339,37 @@ pbMvc.Model = PB.Class({
 
 	set: function ( key, value ) {
 
-		if( PB.is('Object', key) ) {
+		if( this.onData && this.onData[key] ) {
 
-			PB.each(key, this.set, this);
-		} else {
-
-			this.data[key] = value;
+			value = this.onData[key]( value, this.data[key] );
 		}
 
+		this.data[key] = value;
+
 		return this;
+	},
+
+	setData: function ( data ) {
+
+		PB.each(data, this.set, this);
+
+		return this;
+	},
+
+	/**
+	 * Retrieve entry or all data
+	 *
+	 * @param string
+	 * @return mixed
+	 */
+	get: function ( key ) {
+
+		return this.data[key];
+	},
+
+	getData: function () {
+
+		return this.data;
 	},
 
 	isset: function ( key ) {
@@ -362,17 +384,6 @@ pbMvc.Model = PB.Class({
 		return this;
 	},
 
-	/**
-	 * Retrieve entry or all data
-	 *
-	 * @param string
-	 * @return mixed
-	 */
-	get: function ( key ) {
-
-		return key ? this.data[key] : this.data;
-	},
-
 	isValid: function () {
 
 
@@ -383,18 +394,16 @@ pbMvc.Model = PB.Class({
 
 	},
 
-	/**
-	 * Process the.data into a nice object, right for storing it on the server
-	 */
-	preprocess: function () {
-
-	},
-
 	getUrl: function () {
 
-		return this.url.replace('{name}', this.name).replace('{id}', this.get('id') || '');
+		return this.url
+			.replace('{name}', this.name)
+			.replace('{id}', this.get('id') || '');
 	},
 
+	/**
+	 *
+	 */
 	getPostData: function () {
 
 		var data = {};
@@ -421,6 +430,11 @@ pbMvc.Model = PB.Class({
 		if( this.loaded ) {
 
 			return;
+		}
+
+		if( !this.get('id') ) {
+
+			throw new Error('Failed to read `'+this.name+'`, no id set!');
 		}
 
 		(new PB.Request({

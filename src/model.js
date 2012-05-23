@@ -21,12 +21,15 @@ pbMvc.Model = PB.Class({
 			throw new Error('Model required for '+this.name);
 		}
 		
+		// For internal use
 		this.model.id = { type: 'number' };
 		
+		// Model data
 		this.data = {};
 		
 		this.loaded = false;
 		
+		// Read if id given
 		if( id !== undefined ) {
 			
 			this.set('id', id)
@@ -37,16 +40,37 @@ pbMvc.Model = PB.Class({
 	// Handles key=>value or object
 	set: function ( key, value ) {
 		
-		// Handle object
-		if( PB.is('Object', key) ) {
+		if( this.onData && this.onData[key] ) {
 			
-			PB.each(key, this.set, this);
-		} else {
-			
-			this.data[key] = value;
+			value = this.onData[key]( value, this.data[key] );
 		}
 		
+		this.data[key] = value;
+		
 		return this;
+	},
+	
+	setData: function ( data ) {
+		
+		PB.each(data, this.set, this);
+		
+		return this;
+	},
+	
+	/**
+	 * Retrieve entry or all data
+	 *
+	 * @param string
+	 * @return mixed
+	 */
+	get: function ( key ) {
+		
+		return this.data[key];
+	},
+	
+	getData: function () {
+		
+		return this.data;
 	},
 	
 	isset: function ( key ) {
@@ -61,17 +85,6 @@ pbMvc.Model = PB.Class({
 		return this;
 	},
 	
-	/**
-	 * Retrieve entry or all data
-	 *
-	 * @param string
-	 * @return mixed
-	 */
-	get: function ( key ) {
-		
-		return key ? this.data[key] : this.data;
-	},
-	
 	isValid: function () {
 		
 		
@@ -82,21 +95,19 @@ pbMvc.Model = PB.Class({
 		
 	},
 	
-	/**
-	 * Process the.data into a nice object, right for storing it on the server
-	 */
-	preprocess: function () {
-		
-		// User this.set / this.get / this.unset
-	},
-	
 	// Return REST url
 	getUrl: function () {
 		
-		return this.url.replace('{name}', this.name).replace('{id}', this.get('id') || '');
+		return this.url
+			// Set controller name
+			.replace('{name}', this.name)
+			// Set id
+			.replace('{id}', this.get('id') || '');
 	},
 	
-	//
+	/**
+	 * 
+	 */
 	getPostData: function () {
 		
 		var data = {};
@@ -124,6 +135,12 @@ pbMvc.Model = PB.Class({
 		if( this.loaded ) {
 			
 			return;
+		}
+		
+		// Nothing to delete
+		if( !this.get('id') ) {
+			
+			throw new Error('Failed to read `'+this.name+'`, no id set!');
 		}
 		
 		(new PB.Request({
