@@ -32,8 +32,8 @@ pbMvc.Route = PB.Class({
 
 		// Fill params with given uri
 		for( var i = 0; i < match.length; i++ ) {
-
-			if( match[i] ) {
+			
+			if( match[i] && this._extract[i] ) {
 
 				params[this._extract[i]] = match[i];
 			}
@@ -66,63 +66,66 @@ PB.extend(pbMvc.Route, {
 
 			throw Error('Already declared route::'+name);
 		}
+		
+		var parsed = parseString(route);
+		
+		console.log( parsed.regexp );
+		
+		parsed.regexp = new RegExp( parsed.regexp, 'i' );
 
-		// Transform string into regexp
-		var parts = route.split('/'),
-			properties = [],
-			property,
-			i = 0,
-			regexp = '^';
-
-		for( i = 0; i < parts.length; i++ ) {
-
-			if( property = parts[i].match(/^:([a-z0-9_-]+)/i) ) {
-
-				properties.push( property[1] );
-			}
-
-			regexp += parseStringPart( parts[i], parts[i+1] );
-		}
-
-		regexp = new RegExp( regexp.replace(/\\\/\??$/, ''), 'i' );
-
-		return pbMvc.Route.routes[name] = new pbMvc.Route( name, regexp, properties );
+		return pbMvc.Route.routes[name] = new pbMvc.Route( name, parsed.regexp, parsed.properties );
 	}
 });
 
-function parseStringPart ( part, nextPart ) {
-
-	var regexp = '';
-
-	if( part.charAt(0) === ':' ) {
-
-		var match;
+function parseString ( route ) {
+	
+	var properties = [],
+		// Always start at beginning of string
+		regexp = '^';
+	
+	route.replace(routeStrip, function ( match, isGroup, isRequired, isWildcard, name, customMatching, seperator ) {
 
 		regexp += '(';
 
-		if( match = part.match(/\[(.*?)\]/) ) {
+		if( isGroup ) {
 
-			regexp += match[0];
+			properties.push( name );
+
+			if( isWildcard && !customMatching ) {
+
+				regexp += '.*';
+			} else {
+
+				regexp += customMatching ? customMatching : '[a-z0-9_-]';
+				regexp += isRequired ? '+' : '*';
+			}
+
 		} else {
 
-			// Default
-			regexp += '[a-zA-Z0-9_-]';
+			properties.push( false );
+
+			regexp += name;
 		}
 
-		regexp += /\*$/.test( part ) ? '*' : '+';
-
 		regexp += ')';
-	} else {
 
-		regexp += part;
-	}
+		if( !isGroup ) {
 
-	if( nextPart ) {
+			regexp += '+';
+		}
 
-		regexp += '/'+(/\*$/.test( nextPart ) ? '?' : '+');
-	}
-
-	return regexp;
+		if( seperator ) {
+			
+			regexp += seperator;
+			regexp += isRequired ? '+' : '*';
+		}
+	});
+		
+	return {
+		
+		regexp: regexp,
+		properties: properties
+	};
 }
 
 

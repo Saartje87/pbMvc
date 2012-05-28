@@ -23,6 +23,7 @@
 "use strict";
 
 var $ = context.PB,
+	routeStrip = /(:?)(\!?)(\*?)([a-z0-9_-]+)(\[.*?\])*([\/\.|]*)/ig,
 	pbMvc = {};
 
 //= require "./request"
