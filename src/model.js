@@ -40,6 +40,12 @@ pbMvc.Model = PB.Class({
 	// Handles key=>value or object
 	set: function ( key, value ) {
 		
+		if( key === 'id' ) {
+			
+			// Asume an existing object, so set loaded to true
+			this.loaded = true;
+		}
+		
 		if( this.onData && this.onData[key] ) {
 			
 			value = this.onData[key]( value, this.data[key] );
