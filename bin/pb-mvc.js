@@ -321,12 +321,12 @@ pbMvc.Model = PB.Class({
 
 		if( !this.name ) {
 
-			throw new Error('Name required');
+			throw new Error('Model.name required');
 		}
 
 		if( !this.model ) {
 
-			throw new Error('Model required for '+this.name);
+			throw new Error('Model.model required for '+this.name);
 		}
 
 		this.model.id = { type: 'number' };
@@ -349,9 +349,9 @@ pbMvc.Model = PB.Class({
 			this.loaded = true;
 		}
 
-		if( this.onData && this.onData[key] ) {
+		if( this.properties && this.properties[key] && this.properties[key].set ) {
 
-			value = this.onData[key]( value, this.data[key] );
+			value = this.properties[key].set( value, this.data[key] );
 		}
 
 		this.data[key] = value;
@@ -374,7 +374,19 @@ pbMvc.Model = PB.Class({
 	 */
 	get: function ( key ) {
 
-		return this.data[key];
+		var value = this.data[key];
+
+		if( value === undefined ) {
+
+			return null;
+		}
+
+		if( this.properties && this.properties[key] && this.properties[key].get ) {
+
+			value = this.properties[key].get( value );
+		}
+
+		return value;
 	},
 
 	getData: function () {
