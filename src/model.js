@@ -1,7 +1,6 @@
-pbMvc.Model = PB.Class({
-	
-	// 
-	model: null,
+// Add this.error -> to trigger this.emit('error', message || {message: '', code: 0})
+
+pbMvc.Model = PB.Class(PB.Observer, {
 	
 	// 
 	name: null,
@@ -9,56 +8,81 @@ pbMvc.Model = PB.Class({
 	// Url template, default Core5.1
 	url: '/{name}/rest/{id}.json?recursive=1',
 	
+	// 
+	data: null,
+	
+	//
+	previousData: null,
+	
+	// Prevent trigger of change event when settings
+	// data trough setData method
+	_settingData: false,
+	
 	construct: function ( id ) {
 		
 		if( !this.name ) {
 			
-			throw new Error('Model.name required');
+			return this.error('Model.name required');
 		}
 		
-		if( !this.model ) {
-			
-			throw new Error('Model.model required for '+this.name);
-		}
-		
-		// For internal use
-		this.model.id = { type: 'number' };
+		this.parent();
 		
 		// Model data
 		this.data = {};
+		this.previousData = {};
 		
-		this.loaded = false;
-		
-		// Read if id given
+		// Fetch if id given
 		if( id !== undefined ) {
 			
 			this.set('id', id)
-				.read( id );
+				.fetch();
 		}
 	},
 	
 	// Handles key=>value or object
 	set: function ( key, value ) {
 		
-		if( key === 'id' ) {
+		// Store previous value
+		var previousValue = this.data[key];
+		
+		// Do nothing when value is not changed
+		if( previousValue === value ) {
 			
-			// Asume an existing object, so set loaded to true
-			this.loaded = true;
+			return this;
 		}
 		
-		if( this.properties && this.properties[key] && this.properties[key].set ) {
+		// Execute data 'set-binding'
+	/*	if( this.properties && this.properties[key] && this.properties[key].set ) {
 			
-			value = this.properties[key].set( value, this.data[key] );
-		}
+			value = this.properties[key].set.call( this, value, this.data[key] );
+		}*/
 		
 		this.data[key] = value;
+		
+		// Only trigger for single change of property
+		if( !this._settingData ) {
+			
+			// Emit any change
+			this.emit('change', this);
+		}
+
+		// Emit specific event listening
+		// will trigger like change:name
+		this.emit('change:'+key, this, key);
 		
 		return this;
 	},
 	
 	setData: function ( data ) {
 		
+		this._settingData = true;
+		
 		PB.each(data, this.set, this);
+		
+		this._settingData = false;
+		
+		// Emit any change
+		this.emit('change', this);
 		
 		return this;
 	},
@@ -73,22 +97,22 @@ pbMvc.Model = PB.Class({
 		
 		var value = this.data[key];
 		
-		if( value === undefined ) {
+		if( value === undefined || value === null ) {
 			
 			return null;
 		}
 		
-		if( this.properties && this.properties[key] && this.properties[key].get ) {
+/*		if( this.properties && this.properties[key] && this.properties[key].get ) {
 			
-			value = this.properties[key].get( value );
-		}
+			value = this.properties[key].get.call( this, value );
+		}*/
 		
 		return value;
 	},
 	
 	getData: function () {
 		
-		return this.data;
+		return PB.overwrite({}, this.data);
 	},
 	
 	isset: function ( key ) {
@@ -98,7 +122,7 @@ pbMvc.Model = PB.Class({
 	
 	unset: function ( key ) {
 		
-		delete this.data[key];
+		this.data[key] = void 0;
 		
 		return this;
 	},
@@ -108,12 +132,13 @@ pbMvc.Model = PB.Class({
 		
 	},
 	
-	error: function () {
+	error: function ( message ) {
 		
-		
+		console.log('Silent fail :) -> ', message);
 	},
 	
 	// Return REST url
+	// private
 	getUrl: function () {
 		
 		return this.url
@@ -124,9 +149,9 @@ pbMvc.Model = PB.Class({
 	},
 	
 	/**
-	 * 
+	 * Depricated -> removing explecite model declaration
 	 */
-	getPostData: function () {
+/*	getRESTData: function () {
 		
 		var data = {};
 		
@@ -146,43 +171,38 @@ pbMvc.Model = PB.Class({
 		}, this);
 		
 		return data;
-	},
+	},*/
 	
-	read: function () {
-		
-		if( this.loaded ) {
-			
-			return;
-		}
+	fetch: function () {
 		
 		// Nothing to delete
 		if( !this.get('id') ) {
 			
-			throw new Error('Failed to read `'+this.name+'`, no id set!');
+			return this.error('Failed to fetch `'+this.name+'`, no id set!');
 		}
 		
 		(new PB.Request({
 
 			url: this.getUrl(),
 			async: false
-		})).on('end', function ( t, code ){
+		})).on('end', function ( t, status ){
 
-			switch ( code ) {
+			switch ( status ) {
 
 				case 200:
 					if( !t.responseJSON ) {
 						
-						throw new Error('No valid JSON response');
+						this.error('No valid JSON response');
 					}
 				
-					this.set( t.responseJSON );
+					this.setData( t.responseJSON );
 					break;
 
 				default:
-					throw new Error('Error in reading `Model '+this.name+'`');
+					this.error('Error in fetching `Model '+this.name+'`');
 					break;
 			}
-		}.bind(this)).send();
+		}, this).send();
 
 		return this;
 	},
@@ -192,12 +212,12 @@ pbMvc.Model = PB.Class({
 		(new PB.Request({
 			
 			url: this.getUrl(),
-			async: false,
 			method: this.get('id') ? 'PUT' : 'POST',
 			data: {
-				__data: JSON.stringify(this.getPostData())
+				
+				__data: JSON.stringify(this.data)
 			}
-		})).send();
+		})).on('end', this.crudCallback, this).send();
 	},
 	
 	remove: function () {
@@ -211,9 +231,39 @@ pbMvc.Model = PB.Class({
 		(new PB.Request({
 			
 			url: this.getUrl(),
-			async: false,
 			method: 'DELETE'
-		})).send();
+		})).on('end', this.crudCallback, this).send();
+	},
+	
+	// add sync -> one request handler
+	
+	// todo: track status (fetch, create, update, delete)
+	crudCallback: function ( t, status ) {
+		
+		switch ( status ) {
+
+			case 200:
+			case 201:
+				if( !t.responseJSON ) {
+					
+					return this.error('No valid JSON response');
+				}
+			
+				this.setData( t.responseJSON );
+				break;
+			
+			case 401:
+				return this.error('Unauthorized');
+				break;
+			
+			case 405:
+				return this.error('Method Not Allowed');
+				break;
+			
+			default:
+				return this.error('CRUD error: `'+status+'`');
+				break;
+		}
 	}
 });
 
