@@ -225,7 +225,7 @@ pbMvc.Model = PB.Class(PB.Observer, {
 		// Nothing to delete
 		if( !this.get('id') ) {
 			
-			return;
+			return this.error('Already removed? No id');
 		}
 		
 		(new PB.Request({
