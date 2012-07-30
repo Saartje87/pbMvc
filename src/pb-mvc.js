@@ -35,11 +35,11 @@ var $ = context.PB,
 /**
  * Init MVC when all files are loaded
  */
-$(window).once('load', function () {
+/*$(window).once('load', function () {
 	
 	(new PB.App.Request())
-		.execute();
-});
+		.navigate();
+});*/
 
 return $.App = pbMvc;
 });

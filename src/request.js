@@ -16,17 +16,19 @@ pbMvc.Request = PB.Class({
 				
 		if( 'onhashchange' in window ) {
 			
-			PB(window).on('hashchange', this.execute.bind(this));
+			PB(window).on('hashchange', this.navigate.bind(this));
 		} else {
 			
 			setInterval( this.hashCheck.bind(this), 250 );
 		}
+		
+		this.navigate();
 	},
 
 	/**
 	 *
 	 */
-	execute: function ( url, params ) {
+	navigate: function ( url, params ) {
 		
 		if( !PB.is('String', url) ) {
 			
@@ -127,7 +129,7 @@ pbMvc.Request = PB.Class({
 			
 			this.hash = window.location.hash;
 
-			this.execute();
+			this.navigate();
 		}
 	}
 });

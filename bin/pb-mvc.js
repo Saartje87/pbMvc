@@ -40,17 +40,19 @@ pbMvc.Request = PB.Class({
 
 		if( 'onhashchange' in window ) {
 
-			PB(window).on('hashchange', this.execute.bind(this));
+			PB(window).on('hashchange', this.navigate.bind(this));
 		} else {
 
 			setInterval( this.hashCheck.bind(this), 250 );
 		}
+
+		this.navigate();
 	},
 
 	/**
 	 *
 	 */
-	execute: function ( url, params ) {
+	navigate: function ( url, params ) {
 
 		if( !PB.is('String', url) ) {
 
@@ -142,7 +144,7 @@ pbMvc.Request = PB.Class({
 
 			this.hash = window.location.hash;
 
-			this.execute();
+			this.navigate();
 		}
 	}
 });
@@ -511,7 +513,7 @@ pbMvc.Model = PB.Class(PB.Observer, {
 
 		if( !this.get('id') ) {
 
-			return;
+			return this.error('Already removed? No id');
 		}
 
 		(new PB.Request({
@@ -660,11 +662,11 @@ pbMvc.Controller = PB.Class({});
 /**
  * Init MVC when all files are loaded
  */
-$(window).once('load', function () {
+/*$(window).once('load', function () {
 
 	(new PB.App.Request())
-		.execute();
-});
+		.navigate();
+});*/
 
 return $.App = pbMvc;
 });
