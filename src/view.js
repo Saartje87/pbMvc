@@ -32,6 +32,9 @@ PB.overwrite(pbMvc.View, {
 	// Default cache time in seconds
 	expire: 3600,
 	
+	// Garbage collecter running?
+	collecting: false,
+	
 	/**
 	 * Loads the given view synchrone
 	 *
@@ -81,6 +84,8 @@ PB.overwrite(pbMvc.View, {
 		if( !pbMvc.View.collecting ) {
 			
 			setInterval(pbMvc.View.collectGarbage, 30000);
+			
+			pbMvc.View.collecting = true;
 		}
 		
 		return pbMvc.View.cache[url].text;
