@@ -23,6 +23,7 @@
 
 var $ = context.PB,
 	routeStrip = /(:?)(\!?)(\*?)([a-z0-9_-]+)(\[.*?\])*([\/\.|]*)/ig,
+	pushState = false, //!!window.history.pushState,
 	pbMvc = {};
 
 pbMvc.Request = PB.Class({
@@ -38,7 +39,10 @@ pbMvc.Request = PB.Class({
 	 */
 	construct: function () {
 
-		if( 'onhashchange' in window ) {
+		if( pushState ) {
+
+			PB(window).on('popstate', this.navigate.bind(this));
+		} else if( 'onhashchange' in window ) {
 
 			PB(window).on('hashchange', this.navigate.bind(this));
 		} else {
@@ -54,9 +58,13 @@ pbMvc.Request = PB.Class({
 	 */
 	navigate: function ( url, params ) {
 
+		console.log( arguments[0], PB.type(arguments[0]) === 'popstateevent' );
+
 		if( !PB.is('String', url) ) {
 
-			url = window.location.hash;
+			url = pushState
+				? window.location.pathname	// -> Strip baseUrl
+				: window.location.hash;
 		}
 
 		params = PB.extend( this.matchRoute( url ), params );
@@ -276,6 +284,7 @@ function parseString ( route ) {
 }
 
 
+/*
 PB.extend(pbMvc.Route, {
 
 
@@ -310,7 +319,7 @@ PB.extend(pbMvc.Route, {
 		}.bind(this)());
 	}
 
-});
+});*/
 
 pbMvc.Model = PB.Class(PB.Observer, {
 
@@ -584,6 +593,8 @@ PB.overwrite(pbMvc.View, {
 
 	expire: 3600,
 
+	collecting: false,
+
 	/**
 	 * Loads the given view synchrone
 	 *
@@ -632,6 +643,8 @@ PB.overwrite(pbMvc.View, {
 		if( !pbMvc.View.collecting ) {
 
 			setInterval(pbMvc.View.collectGarbage, 30000);
+
+			pbMvc.View.collecting = true;
 		}
 
 		return pbMvc.View.cache[url].text;

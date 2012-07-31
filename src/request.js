@@ -13,8 +13,11 @@ pbMvc.Request = PB.Class({
 	 *
 	 */
 	construct: function () {
-				
-		if( 'onhashchange' in window ) {
+		
+		if( pushState ) {
+			
+			PB(window).on('popstate', this.navigate.bind(this));
+		} else if( 'onhashchange' in window ) {
 			
 			PB(window).on('hashchange', this.navigate.bind(this));
 		} else {
@@ -30,9 +33,13 @@ pbMvc.Request = PB.Class({
 	 */
 	navigate: function ( url, params ) {
 		
+		console.log( arguments[0], PB.type(arguments[0]) === 'popstateevent' );
+		
 		if( !PB.is('String', url) ) {
 			
-			url = window.location.hash;
+			url = pushState
+				? window.location.pathname	// -> Strip baseUrl
+				: window.location.hash;
 		}
 		
 		params = PB.extend( this.matchRoute( url ), params );
@@ -74,6 +81,7 @@ pbMvc.Request = PB.Class({
 			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 		
+		// Execute before methods if existing
 		if( PB.is('Function', proto.before) ) {
 			
 			controller.before( params );
@@ -82,6 +90,7 @@ pbMvc.Request = PB.Class({
 		// Execute the requested method
 		controller[action]( params );
 		
+		// Execute after methods if existing
 		if( PB.is('Function', proto.after) ) {
 			
 			controller.after( params );

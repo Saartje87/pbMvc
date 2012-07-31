@@ -24,6 +24,8 @@
 
 var $ = context.PB,
 	routeStrip = /(:?)(\!?)(\*?)([a-z0-9_-]+)(\[.*?\])*([\/\.|]*)/ig,
+	// Browser support pushState?
+	pushState = false, //!!window.history.pushState,
 	pbMvc = {};
 
 //= require "./request"
