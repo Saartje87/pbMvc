@@ -8,6 +8,9 @@ pbMvc.Request = PB.Class({
 	
 	// 
 	hash: null,
+	
+	//
+	basePath: '/',
 
 	/**
 	 *
@@ -16,24 +19,51 @@ pbMvc.Request = PB.Class({
 		
 		if( pushState ) {
 			
-			PB(window).on('popstate', this.navigate.bind(this));
+			PB(window).on('popstate', this.execute.bind(this));
 		} else if( 'onhashchange' in window ) {
 			
-			PB(window).on('hashchange', this.navigate.bind(this));
+			PB(window).on('hashchange', this.execute.bind(this));
 		} else {
 			
 			setInterval( this.hashCheck.bind(this), 250 );
 		}
 		
-		this.navigate();
+		this.execute();
+	},
+	
+	/**
+	 * Should change hash, if not silent
+	 */
+	navigate: function ( url, options ) {
+		
+		// { silent: true }
+		
+		// Execute request silently
+		if( options && options.silent ) {
+			
+			options.silent = void 0;
+			
+			this.execute( url, options );
+		} else {
+			
+			this.execute( undefined, options );
+		}
+		
+		return this;
+		
+	//	url = (options.silent) ? null : url;
+		
+	//	options.silent = void 0;
+		
+	//	this.execute( url, params );
 	},
 
 	/**
 	 *
 	 */
-	navigate: function ( url, params ) {
+	execute: function ( url, params ) {
 		
-		console.log( arguments[0], PB.type(arguments[0]) === 'popstateevent' );
+//		console.log( arguments[0], PB.type(arguments[0]) === 'popstateevent' );
 		
 		if( !PB.is('String', url) ) {
 			
@@ -138,7 +168,7 @@ pbMvc.Request = PB.Class({
 			
 			this.hash = window.location.hash;
 
-			this.navigate();
+			this.execute();
 		}
 	}
 });

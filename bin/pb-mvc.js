@@ -34,6 +34,8 @@ pbMvc.Request = PB.Class({
 
 	hash: null,
 
+	basePath: '/',
+
 	/**
 	 *
 	 */
@@ -41,24 +43,45 @@ pbMvc.Request = PB.Class({
 
 		if( pushState ) {
 
-			PB(window).on('popstate', this.navigate.bind(this));
+			PB(window).on('popstate', this.execute.bind(this));
 		} else if( 'onhashchange' in window ) {
 
-			PB(window).on('hashchange', this.navigate.bind(this));
+			PB(window).on('hashchange', this.execute.bind(this));
 		} else {
 
 			setInterval( this.hashCheck.bind(this), 250 );
 		}
 
-		this.navigate();
+		this.execute();
+	},
+
+	/**
+	 * Should change hash, if not silent
+	 */
+	navigate: function ( url, options ) {
+
+
+		if( options && options.silent ) {
+
+			options.silent = void 0;
+
+			this.execute( url, options );
+		} else {
+
+			this.execute( undefined, options );
+		}
+
+		return this;
+
+
+
 	},
 
 	/**
 	 *
 	 */
-	navigate: function ( url, params ) {
+	execute: function ( url, params ) {
 
-		console.log( arguments[0], PB.type(arguments[0]) === 'popstateevent' );
 
 		if( !PB.is('String', url) ) {
 
@@ -152,7 +175,7 @@ pbMvc.Request = PB.Class({
 
 			this.hash = window.location.hash;
 
-			this.navigate();
+			this.execute();
 		}
 	}
 });
@@ -573,15 +596,36 @@ pbMvc.View = PB.Class({
 	construct: function ( filename, expire ) {
 
 		this.filename = filename;
-		this.expire = expire;
+		this.expire = (expire === undefined) ? pbMvc.View.expire : expire;
 	},
 
 	/**
-	 *
+	 * @param {String} view
 	 */
-	render: function () {
+	setView: function ( view ) {
 
-		return PB.App.View.fetch( this.filename, this.expire );
+		this.view = view;
+	},
+
+	/**
+	 * Fetch file from server
+	 *
+	 * @param {Function} callback
+	 * @todo -> asynchrone
+	 */
+	fetch: function ( fn ) {
+
+		this.view = PB.App.View.fetch( this.filename, this.expire );
+
+		return this;
+	},
+
+	/**
+	 * @param {Object} (optional)
+	 */
+	render: function ( data ) {
+
+		return this.view;
 	}
 });
 
@@ -620,7 +664,7 @@ PB.overwrite(pbMvc.View, {
 
 		pbMvc.View.cache[url] = {
 
-			expire: Date.now() + (expire === undefined ? pbMvc.View.expire*1000 : expire)
+			expire: Date.now() + (expire * 1000)
 		};
 
 		request.on('end', function ( t, code ) {
@@ -671,15 +715,6 @@ PB.overwrite(pbMvc.View, {
  * Abstract controller is based on Pluxbox, rewrite for own purpose
  */
 pbMvc.Controller = PB.Class({});
-
-/**
- * Init MVC when all files are loaded
- */
-/*$(window).once('load', function () {
-
-	(new PB.App.Request())
-		.navigate();
-});*/
 
 return $.App = pbMvc;
 });

@@ -34,15 +34,6 @@ var $ = context.PB,
 //= require "./view"
 //= require "./controller"
 
-/**
- * Init MVC when all files are loaded
- */
-/*$(window).once('load', function () {
-	
-	(new PB.App.Request())
-		.navigate();
-});*/
-
 return $.App = pbMvc;
 });
 
