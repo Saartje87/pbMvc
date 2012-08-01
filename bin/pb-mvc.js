@@ -120,7 +120,7 @@ pbMvc.Request = PB.Class({
 
 		if( !pbMvc.Controller[controllerName] ) {
 
-			throw Error( '`'+controllerName+'` not found' );
+			console.exception( '`'+controllerName+'` not found' );
 			return;
 		}
 
@@ -128,7 +128,7 @@ pbMvc.Request = PB.Class({
 
 		if( !proto[action] ) {
 
-			throw Error( '`'+action+'` not found in `'+controller+'`' );
+			console.exception( '`'+action+'` not found in `'+controller+'`' );
 			return;
 		}
 
@@ -257,7 +257,8 @@ PB.extend(pbMvc.Route, {
 
 		if( pbMvc.Route.routes[name] ) {
 
-			throw Error('Already declared route::'+name);
+			console.exception('Already declared route::'+name);
+			return;
 		}
 
 		var parsed = parseString(route);
@@ -685,7 +686,7 @@ PB.overwrite(pbMvc.View, {
 			switch( code ) {
 
 				case 404:
-					throw new Error('View file `'+url+'` not found');
+					console.exception('View file `'+url+'` not found');
 					break;
 
 				case 200:
@@ -693,7 +694,7 @@ PB.overwrite(pbMvc.View, {
 					break;
 
 				default:
-					throw new Error('Response didn`t return a valid code, returned '+code);
+					console.exception('Response didn`t return a valid code, returned '+code);
 			}
 		}).send();
 

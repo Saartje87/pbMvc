@@ -103,7 +103,7 @@ pbMvc.Request = PB.Class({
 		// Does the given controller exists?
 		if( !pbMvc.Controller[controllerName] ) {
 
-			throw Error( '`'+controllerName+'` not found' );
+			console.exception( '`'+controllerName+'` not found' );
 			return;
 		}
 		
@@ -112,7 +112,7 @@ pbMvc.Request = PB.Class({
 		// Does the given controller has the required action?
 		if( !proto[action] ) {
 
-			throw Error( '`'+action+'` not found in `'+controller+'`' );
+			console.exception( '`'+action+'` not found in `'+controller+'`' );
 			return;
 		}
 

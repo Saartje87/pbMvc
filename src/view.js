@@ -91,7 +91,7 @@ PB.overwrite(pbMvc.View, {
 			switch( code ) {
 				
 				case 404:
-					throw new Error('View file `'+url+'` not found');
+					console.exception('View file `'+url+'` not found');
 					break;
 				
 				case 200:
@@ -99,7 +99,7 @@ PB.overwrite(pbMvc.View, {
 					break;
 				
 				default:
-					throw new Error('Response didn`t return a valid code, returned '+code);
+					console.exception('Response didn`t return a valid code, returned '+code);
 			}
 		}).send();
 		

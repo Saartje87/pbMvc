@@ -64,7 +64,8 @@ PB.extend(pbMvc.Route, {
 
 		if( pbMvc.Route.routes[name] ) {
 
-			throw Error('Already declared route::'+name);
+			console.exception('Already declared route::'+name);
+			return;
 		}
 		
 		var parsed = parseString(route);
