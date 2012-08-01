@@ -82,6 +82,8 @@ pbMvc.Request = PB.Class({
 		}
 		
 		// Remove basePath
+		url = url.trimLeft('#');
+		url = url.trimLeft('!');
 		url = url.trimLeft(this.basePath);
 		
 		params = PB.extend( this.matchRoute( url ), params );
@@ -152,7 +154,6 @@ pbMvc.Request = PB.Class({
 		var parts;
 
 		// Trim #
-		url = url.trimLeft('#');
 		url = url.trim('/');
 		url = url.replace(/\/\/+/, '/');
 

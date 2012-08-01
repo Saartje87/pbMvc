@@ -69,7 +69,7 @@ PB.extend(pbMvc.Route, {
 		
 		var parsed = parseString(route);
 		
-		console.log( parsed.regexp );
+//		console.log( parsed.regexp );
 		
 		parsed.regexp = new RegExp( parsed.regexp, 'i' );
 
@@ -130,6 +130,7 @@ function parseString ( route ) {
 
 
 // History of the address + trigger
+/*
 PB.extend(pbMvc.Route, {
 
 
@@ -165,4 +166,4 @@ PB.extend(pbMvc.Route, {
 		}.bind(this)());
 	}
 
-});
+});*/

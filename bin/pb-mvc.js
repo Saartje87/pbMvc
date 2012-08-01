@@ -101,6 +101,8 @@ pbMvc.Request = PB.Class({
 				: window.location.hash;
 		}
 
+		url = url.trimLeft('#');
+		url = url.trimLeft('!');
 		url = url.trimLeft(this.basePath);
 
 		params = PB.extend( this.matchRoute( url ), params );
@@ -162,7 +164,6 @@ pbMvc.Request = PB.Class({
 
 		var parts;
 
-		url = url.trimLeft('#');
 		url = url.trim('/');
 		url = url.replace(/\/\/+/, '/');
 
@@ -261,7 +262,6 @@ PB.extend(pbMvc.Route, {
 
 		var parsed = parseString(route);
 
-		console.log( parsed.regexp );
 
 		parsed.regexp = new RegExp( parsed.regexp, 'i' );
 
