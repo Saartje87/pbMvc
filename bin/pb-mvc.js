@@ -661,7 +661,7 @@ PB.overwrite(pbMvc.View, {
 	 */
 	fetch: function ( url, expire ) {
 
-		if( pbMvc.View.cache[url] && pbMvc.View.cache[url].expire > Date.now() ) {
+		if( pbMvc.View.cache[url] && Date.now() < pbMvc.View.cache[url].expire ) {
 
 			return pbMvc.View.cache[url].text;
 		}
@@ -700,7 +700,7 @@ PB.overwrite(pbMvc.View, {
 
 		if( !pbMvc.View.collecting ) {
 
-			setInterval(pbMvc.View.collectGarbage, 30000);
+			setInterval(pbMvc.View.collectGarbage, 10000);
 
 			pbMvc.View.collecting = true;
 		}
@@ -718,7 +718,7 @@ PB.overwrite(pbMvc.View, {
 
 		PB.each(pbMvc.View.cache, function ( url, data ) {
 
-			if( data.expire > now ) {
+			if( Date.now() > data.expire ) {
 
 				delete pbMvc.View.cache[url];
 			}
