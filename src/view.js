@@ -9,15 +9,38 @@ pbMvc.View = PB.Class({
 	construct: function ( filename, expire ) {
 		
 		this.filename = filename;
-		this.expire = expire;
+		this.expire = (expire === undefined) ? pbMvc.View.expire : expire;
 	},
 	
 	/**
-	 *
+	 * @param {String} view
 	 */
-	render: function () {
+	setView: function ( view ) {
 		
-		return PB.App.View.fetch( this.filename, this.expire );
+		this.view = view;
+	},
+	
+	/**
+	 * Fetch file from server
+	 *
+	 * @param {Function} callback
+	 * @todo -> asynchrone
+	 */
+	fetch: function ( fn ) {
+		
+		// Fetch view from server
+		this.view = PB.App.View.fetch( this.filename, this.expire );
+		
+		return this;
+	},
+	
+	/**
+	 * @param {Object} (optional)
+	 */
+	render: function ( data ) {
+		
+		// @todo -> parse view
+		return this.view;
 	}
 });
 
@@ -60,7 +83,7 @@ PB.overwrite(pbMvc.View, {
 		
 		pbMvc.View.cache[url] = {
 			
-			expire: Date.now() + (expire === undefined ? pbMvc.View.expire*1000 : expire)
+			expire: Date.now() + (expire * 1000)
 		};
 		
 		request.on('end', function ( t, code ) {
