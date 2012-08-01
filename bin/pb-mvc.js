@@ -66,6 +66,8 @@ pbMvc.Request = PB.Class({
 	 */
 	navigate: function ( url, options ) {
 
+		url = url.replace('http://'+window.location.hostname, '');
+
 		if( options && options.silent ) {
 
 			options.silent = void 0;
@@ -98,6 +100,8 @@ pbMvc.Request = PB.Class({
 				? window.location.pathname	// -> Strip baseUrl
 				: window.location.hash;
 		}
+
+		url = url.trimLeft(this.basePath);
 
 		params = PB.extend( this.matchRoute( url ), params );
 
