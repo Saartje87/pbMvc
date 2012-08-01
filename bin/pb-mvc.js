@@ -57,24 +57,33 @@ pbMvc.Request = PB.Class({
 
 	/**
 	 * Should change hash, if not silent
+	 * Options only used when using silent
+	 *
+	 * For silent execution, no changing uri, use options -> { silent: true }
+	 *
+	 * @param {String} url
+	 * @param {object} (optional)
 	 */
 	navigate: function ( url, options ) {
-
 
 		if( options && options.silent ) {
 
 			options.silent = void 0;
 
 			this.execute( url, options );
-		} else {
+		}
 
-			this.execute( undefined, options );
+		if( pushState ) {
+
+			history.pushState('', '', url);
+			this.execute( url );
+		}
+		else {
+
+			window.location.hash = '!'+url;
 		}
 
 		return this;
-
-
-
 	},
 
 	/**
