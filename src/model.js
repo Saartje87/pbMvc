@@ -57,6 +57,9 @@ pbMvc.Model = PB.Class(PB.Observer, {
 			value = this.properties[key].set.call( this, value, this.data[key] );
 		}*/
 		
+		// Data has changed, used for setData method
+		this._dataChanged = true;
+		
 		this.data[key] = value;
 		
 		// Only trigger for single change of property
@@ -64,11 +67,11 @@ pbMvc.Model = PB.Class(PB.Observer, {
 			
 			// Emit any change
 			this.emit('change', this);
+			
+			// Emit specific event listening
+			// will trigger like change:name
+			this.emit('change:'+key, this, key);
 		}
-
-		// Emit specific event listening
-		// will trigger like change:name
-		this.emit('change:'+key, this, key);
 		
 		return this;
 	},
@@ -76,13 +79,17 @@ pbMvc.Model = PB.Class(PB.Observer, {
 	setData: function ( data ) {
 		
 		this._settingData = true;
+		this._dataChanged = false;
 		
 		PB.each(data, this.set, this);
 		
 		this._settingData = false;
 		
-		// Emit any change
-		this.emit('change', this);
+		// Emit change
+		if( this._dataChanged ) {
+			
+			this.emit('change', this);
+		}
 		
 		return this;
 	},
