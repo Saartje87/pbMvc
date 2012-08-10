@@ -403,14 +403,16 @@ pbMvc.Model = PB.Class(PB.Observer, {
 			value = this.properties[key].set.call( this, value, this.data[key] );
 		}*/
 
+		this._dataChanged = true;
+
 		this.data[key] = value;
 
 		if( !this._settingData ) {
 
 			this.emit('change', this);
-		}
 
-		this.emit('change:'+key, this, key);
+			this.emit('change:'+key, this, key);
+		}
 
 		return this;
 	},
@@ -418,12 +420,16 @@ pbMvc.Model = PB.Class(PB.Observer, {
 	setData: function ( data ) {
 
 		this._settingData = true;
+		this._dataChanged = false;
 
 		PB.each(data, this.set, this);
 
 		this._settingData = false;
 
-		this.emit('change', this);
+		if( this._dataChanged ) {
+
+			this.emit('change', this);
+		}
 
 		return this;
 	},
