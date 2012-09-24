@@ -5,6 +5,14 @@
  * copyright 1012, Pluxbox
  * MIT License
  */
+ /*jslint  browser:  true,
+            newcap:   true,
+            nomen:    false,
+            plusplus: false,
+            undef:    true,
+            vars:     false,
+            white:    false */
+  /*global  window, jQuery, $, MyApp */
 (function ( name, context, definition ) {
 
 	if( typeof module !== 'undefined' && typeof module.exports === 'object' ) {
@@ -482,6 +490,8 @@ pbMvc.Model = PB.Class(PB.Observer, {
 	error: function ( message ) {
 
 		console.log('Silent fail :) -> ', message);
+
+		return this;
 	},
 
 	getUrl: function () {
@@ -577,6 +587,141 @@ pbMvc.Model = PB.Class(PB.Observer, {
 
 
 	crudCallback: function ( t, status ) {
+
+		switch ( status ) {
+
+			case 200:
+			case 201:
+				if( !t.responseJSON ) {
+
+					return this.error('No valid JSON response');
+				}
+
+				this.setData( t.responseJSON );
+				break;
+
+			case 401:
+				return this.error('Unauthorized');
+				break;
+
+			case 405:
+				return this.error('Method Not Allowed');
+				break;
+
+			default:
+				return this.error('CRUD error: `'+status+'`');
+				break;
+		}
+	}
+});
+
+
+
+
+
+pbMvc.Collection = PB.Class(PB.Observer, {
+
+	url: '/{model}/search.json',
+
+	data: null,
+
+	previousData: null,
+
+	model: null,
+
+
+	construct: function ( config ) {
+
+		this.data = [];
+
+		this.parent();
+
+		PB.overwrite(this, config);
+
+		if( !this.model || !pbMvc.Model[this.model] ) {
+
+			return this.error('Model `'+this.model+'` not found');
+		}
+	},
+
+	error: function ( message ) {
+
+		console.log('Silent fail :) -> ', message);
+
+		return this;
+	},
+
+	getUrl: function () {
+
+		return this.url
+			.replace('{model}', this.model);
+	},
+
+/*	buidlQuery: function ( data ) {
+
+		var dataClone = PB.overwrite({}, data);
+
+		PB.extend(dataClone, this.data);
+
+		PB.each(dataClone, function () {
+
+
+		});
+	}*/
+
+
+	create: function () {
+
+
+	},
+
+	add: function ( mixed ) {
+
+		if( PB.type(mixed) === 'object' ) {
+
+			this.data.push( mixed );
+		} else {
+		}
+
+		return this;
+	},
+
+	remove: function () {
+
+
+	},
+
+	setData: function () {
+
+		PB.each(data, this.add, this);
+	},
+
+	/**
+	 * Find specific model
+	 */
+	find: function () {
+
+
+	},
+
+	/**
+	 * Find multiple models `collection`
+	 */
+	findAll: function ( q ) {
+
+
+
+		(new PB.Request({
+
+			url: this.getUrl(),
+			data: {
+
+				q: q
+			}
+		})).on('end', this.searchCallback, this).send();
+	},
+
+	searchCallback: function ( t, status ) {
 
 		switch ( status ) {
 

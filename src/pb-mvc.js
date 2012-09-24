@@ -6,6 +6,14 @@
  * copyright 1012, Pluxbox
  * MIT License
  */
+ /*jslint  browser:  true,
+            newcap:   true,
+            nomen:    false,
+            plusplus: false,
+            undef:    true,
+            vars:     false,
+            white:    false */
+  /*global  window, jQuery, $, MyApp */
 (function ( name, context, definition ) {
 	
 	if( typeof module !== 'undefined' && typeof module.exports === 'object' ) {
@@ -31,6 +39,7 @@ var $ = context.PB,
 //= require "./request"
 //= require "./route"
 //= require "./model"
+//= require "./collection"
 //= require "./view"
 //= require "./controller"
 

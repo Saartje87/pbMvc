@@ -142,6 +142,8 @@ pbMvc.Model = PB.Class(PB.Observer, {
 	error: function ( message ) {
 		
 		console.log('Silent fail :) -> ', message);
+		
+		return this;
 	},
 	
 	// Return REST url
