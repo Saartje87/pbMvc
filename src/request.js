@@ -6,6 +6,10 @@ pbMvc.Request = PB.Class({
 	// Cache already created controllers
 	cache: {},
 	
+	//
+	history: [],
+	historyLimit: 10, 
+	
 	// 
 	hash: null,
 	
@@ -49,7 +53,7 @@ pbMvc.Request = PB.Class({
 			
 			options.silent = void 0;
 			
-			this.execute( url, options );
+			return this.execute( url, options );
 		}
 		
 		// With pushState, handle url delegation automatically
@@ -125,6 +129,15 @@ pbMvc.Request = PB.Class({
 			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 		
+		if( controllerName !== this.history[this.history.length].controller ) {
+			
+			// Execute before methods if existing
+			if( PB.is('Function', proto.leave) ) {
+
+				controller.leave( params );
+			}
+		}
+		
 		// Execute before methods if existing
 		if( PB.is('Function', proto.before) ) {
 			
@@ -138,6 +151,14 @@ pbMvc.Request = PB.Class({
 		if( PB.is('Function', proto.after) ) {
 			
 			controller.after( params );
+		}
+		
+		// Add to history
+		this.history.push( params );
+		
+		if( this.history.length > this.historyLimit ) {
+			
+			this.history.shift();
 		}
 
 		return this;

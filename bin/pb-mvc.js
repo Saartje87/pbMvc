@@ -40,6 +40,9 @@ pbMvc.Request = PB.Class({
 
 	cache: {},
 
+	history: [],
+	historyLimit: 10,
+
 	hash: null,
 
 	basePath: '/',
@@ -80,7 +83,7 @@ pbMvc.Request = PB.Class({
 
 			options.silent = void 0;
 
-			this.execute( url, options );
+			return this.execute( url, options );
 		}
 
 		if( pushState ) {
@@ -147,6 +150,14 @@ pbMvc.Request = PB.Class({
 			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 
+		if( controllerName !== this.history[this.history.length].controller ) {
+
+			if( PB.is('Function', proto.leave) ) {
+
+				controller.leave( params );
+			}
+		}
+
 		if( PB.is('Function', proto.before) ) {
 
 			controller.before( params );
@@ -157,6 +168,13 @@ pbMvc.Request = PB.Class({
 		if( PB.is('Function', proto.after) ) {
 
 			controller.after( params );
+		}
+
+		this.history.push( params );
+
+		if( this.history.length > this.historyLimit ) {
+
+			this.history.shift();
 		}
 
 		return this;
