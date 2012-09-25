@@ -750,6 +750,14 @@ pbMvc.Collection = PB.Class(PB.Observer, {
 			data.q = q;
 		}
 
+		PB.each(data, function ( key, value ) {
+
+			if( !this.allowedParams[key] ) {
+
+				delete data[key];
+			}
+		}, this);
+
 
 
 		(new PB.Request({

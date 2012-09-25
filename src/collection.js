@@ -158,6 +158,15 @@ pbMvc.Collection = PB.Class(PB.Observer, {
 			data.q = q;
 		}
 		
+		// Only allow keys in allowedParams
+		PB.each(data, function ( key, value ) {
+
+			if( !this.allowedParams[key] ) {
+				
+				delete data[key];
+			}
+		}, this);
+		
 		// map -> entries to pbMvc.Model['blep']
 		
 		// emit('load') -> all results loaded
