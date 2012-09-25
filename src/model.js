@@ -119,6 +119,7 @@ pbMvc.Model = PB.Class(PB.Observer, {
 	
 	getData: function () {
 		
+		// Return a clone, should be a deep clone?
 		return PB.overwrite({}, this.data);
 	},
 	

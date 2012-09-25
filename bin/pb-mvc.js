@@ -625,6 +625,18 @@ pbMvc.Collection = PB.Class(PB.Observer, {
 
 	data: null,
 
+	params: null,
+
+	allowedParams: {
+
+		'page-index': true,
+		'max-results': true,
+		'order': true,
+		'q': true,
+		'total-pages': false,
+		'total-results': false
+	},
+
 	previousData: null,
 
 	model: null,
@@ -633,6 +645,7 @@ pbMvc.Collection = PB.Class(PB.Observer, {
 	construct: function ( config ) {
 
 		this.data = [];
+		this.params = {};
 
 		this.parent();
 
@@ -657,20 +670,12 @@ pbMvc.Collection = PB.Class(PB.Observer, {
 			.replace('{model}', this.model);
 	},
 
-/*	buidlQuery: function ( data ) {
-
-		var dataClone = PB.overwrite({}, data);
-
-		PB.extend(dataClone, this.data);
-
-		PB.each(dataClone, function () {
+	save: function () {
 
 
-		});
-	}*/
+	},
 
-
-	create: function () {
+	remove: function () {
 
 
 	},
@@ -686,14 +691,43 @@ pbMvc.Collection = PB.Class(PB.Observer, {
 		return this;
 	},
 
-	remove: function () {
+	clear: function () {
 
+		this.data.length = 0;
 
+		return this;
 	},
 
-	setData: function () {
+	setData: function ( data ) {
 
-		PB.each(data, this.add, this);
+		data.forEach(this.add, this);
+	},
+
+	setParam: function ( key, value ) {
+
+		if( key in this.allowedParams ) {
+
+			this.params[key] = value;
+		}
+
+		return this;
+	},
+
+	getParam: function ( key ) {
+
+		return this.params[key] || undefined;
+	},
+
+	setParams: function ( data ) {
+
+		PB.each(data, this.setParam, this);
+
+		return this;
+	},
+
+	getParams: function () {
+
+		return PB.overwrite({}, this.params);
 	},
 
 	/**
@@ -709,15 +743,19 @@ pbMvc.Collection = PB.Class(PB.Observer, {
 	 */
 	findAll: function ( q ) {
 
+		var data = PB.overwrite({}, this.params);
+
+		if( q ) {
+
+			data.q = q;
+		}
+
 
 
 		(new PB.Request({
 
 			url: this.getUrl(),
-			data: {
-
-				q: q
-			}
+			data: data
 		})).on('end', this.searchCallback, this).send();
 	},
 
@@ -732,7 +770,17 @@ pbMvc.Collection = PB.Class(PB.Observer, {
 					return this.error('No valid JSON response');
 				}
 
-				this.setData( t.responseJSON );
+				PB.each(t.responseJSON, function ( key, value ) {
+
+					if( key in this.allowedParams ) {
+
+						this.setParam(key, value);
+					}
+				}, this);
+
+				this.setData( t.responseJSON.results );
+
+				this.emit('load', this);
 				break;
 
 			case 401:
