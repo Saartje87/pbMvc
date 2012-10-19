@@ -6,14 +6,6 @@
  * copyright 1012, Pluxbox
  * MIT License
  */
- /*jslint  browser:  true,
-            newcap:   true,
-            nomen:    false,
-            plusplus: false,
-            undef:    true,
-            vars:     false,
-            white:    false */
-  /*global  window, jQuery, $, MyApp */
 (function ( name, context, definition ) {
 	
 	if( typeof module !== 'undefined' && typeof module.exports === 'object' ) {
@@ -33,7 +25,7 @@
 var $ = context.PB,
 	routeStrip = /(:?)(\!?)(\*?)([a-z0-9_-]+)(\[.*?\])*([\/\.|]*)/ig,
 	// Browser support pushState?
-	pushState = false, //!!window.history.pushState,
+	pushState = !!window.history.pushState,
 	pbMvc = {};
 
 //= require "./request"
