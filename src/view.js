@@ -8,7 +8,7 @@ pbMvc.View = PB.Class({
 	 */
 	construct: function ( filename, expire ) {
 		
-		this.filename = filename;
+		this.filename = filename || this.filename;
 		this.expire = (expire === undefined) ? pbMvc.View.expire : expire;
 	},
 	

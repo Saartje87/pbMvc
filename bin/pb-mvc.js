@@ -5,14 +5,6 @@
  * copyright 1012, Pluxbox
  * MIT License
  */
- /*jslint  browser:  true,
-            newcap:   true,
-            nomen:    false,
-            plusplus: false,
-            undef:    true,
-            vars:     false,
-            white:    false */
-  /*global  window, jQuery, $, MyApp */
 (function ( name, context, definition ) {
 
 	if( typeof module !== 'undefined' && typeof module.exports === 'object' ) {
@@ -31,7 +23,7 @@
 
 var $ = context.PB,
 	routeStrip = /(:?)(\!?)(\*?)([a-z0-9_-]+)(\[.*?\])*([\/\.|]*)/ig,
-	pushState = false, //!!window.history.pushState,
+	pushState = !!window.history.pushState,
 	pbMvc = {};
 
 pbMvc.Request = PB.Class({
@@ -47,12 +39,16 @@ pbMvc.Request = PB.Class({
 
 	basePath: '/',
 
+	pushstate: false,
+
 	/**
 	 *
 	 */
-	construct: function () {
+	construct: function ( config ) {
 
-		if( pushState ) {
+		PB.overwrite(this, config);
+
+		if( this.pushstate && pushState ) {
 
 			PB(window).on('popstate', this.execute.bind(this));
 		} else if( 'onhashchange' in window ) {
@@ -86,7 +82,7 @@ pbMvc.Request = PB.Class({
 			return this.execute( url, options );
 		}
 
-		if( pushState ) {
+		if( this.pushstate && pushState ) {
 
 			history.pushState('', '', url);
 			this.execute( url );
@@ -107,7 +103,7 @@ pbMvc.Request = PB.Class({
 
 		if( !PB.is('String', url) ) {
 
-			url = pushState
+			url = this.pushstate && pushState
 				? window.location.pathname	// -> Strip baseUrl
 				: window.location.hash;
 		}
@@ -150,11 +146,13 @@ pbMvc.Request = PB.Class({
 			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 
-		if( controllerName !== this.history[this.history.length].controller ) {
+		if( this.history.length && controllerName !== this.history[this.history.length-1].controller ) {
 
-			if( PB.is('Function', proto.leave) ) {
+			prevController = this.cache[this.history[this.history.length-1].controller];
 
-				controller.leave( params );
+			if( PB.is('Function', prevController.change) ) {
+
+				prevController.change( params );
 			}
 		}
 
@@ -217,6 +215,13 @@ pbMvc.Request = PB.Class({
 
 			this.execute();
 		}
+	},
+
+	getHistory: function ( index ) {
+
+		return index < 0
+			? this.history[index + this.history.length]
+			: this.history[index];
 	}
 });
 /**
@@ -834,7 +839,7 @@ pbMvc.View = PB.Class({
 	 */
 	construct: function ( filename, expire ) {
 
-		this.filename = filename;
+		this.filename = filename || this.filename;
 		this.expire = (expire === undefined) ? pbMvc.View.expire : expire;
 	},
 
