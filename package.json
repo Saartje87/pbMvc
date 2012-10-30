@@ -1,0 +1,28 @@
+{
+	"name": "pbMvc",
+	"version": "0.1.0",
+	"author": {
+		
+		"name": "Niek Saarberg",
+		"url": ""
+	},
+	"repository": {
+	
+		"type": "git",
+		"url": "https://github.com/Saartje87/pbMvc.git"
+	},
+	"bugs": {
+	
+		"url": "https://github.com/Saartje87/pbMvc/issues"
+	},
+	"description": "",
+	"contributors": [],
+	"repository": {},
+	"bugs": {},
+	"keywords": ["mvc"],
+	"license": "MIT",
+	"devDependencies": {
+		
+		"grunt": "~0.3.9"
+	}
+}
