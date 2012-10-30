@@ -3,18 +3,14 @@ pbMvc.Request = PB.Class({
 	// Only methods with this prefix can be called
 	prefix: 'http_',
 
-	// Cache already created controllers
+	// Controller cache
 	cache: {},
 	
-	//
-	history: [],
-	historyLimit: 10, 
-	
-	// 
+	// Store hash, older browser fallback
 	hash: null,
 	
-	//
-	basePath: '/',
+	// In wich folder the mvc gets executed
+	base: '/',
 	
 	// Use pushstate
 	pushstate: false,
@@ -26,48 +22,52 @@ pbMvc.Request = PB.Class({
 		
 		PB.overwrite(this, config);
 		
+		this.history = new Histry(this);
+		this._execute = this.execute.bind(this);
+		
 		if( this.pushstate && pushState ) {
 			
-			PB(window).on('popstate', this.execute.bind(this));
+			PB(window).on('popstate', this._execute);
 		} else if( 'onhashchange' in window ) {
 			
-			PB(window).on('hashchange', this.execute.bind(this));
+			PB(window).on('hashchange', this._execute);
 		} else {
 			
 			setInterval( this.hashCheck.bind(this), 250 );
 		}
 		
-		this.execute();
+		// Handle execution asynchronously so the instance is avaible 
+		// when the controller and action are called
+		setTimeout(this._execute, 1);
 	},
 	
 	/**
-	 * Should change hash, if not silent
-	 * Options only used when using silent
+	 * Navigate to given uri
 	 *
-	 * For silent execution, no changing uri, use options -> { silent: true }
+	 * options param could be used to add additional arguments to the called controller/action
+	 * or to execute the request silently (so the address bar won't be modified) user { silent: true }
 	 *
 	 * @param {String} url
-	 * @param {object} (optional)
+	 * @param {Object} (optional)
 	 */
 	navigate: function ( url, options ) {
 		
-		url = url.replace('http://'+window.location.hostname, '');
+		// Strip the host from the given url (could be the case in .href in IE7)
+		url = url.replace(window.location.protocol+'//'+window.location.hostname, '');
 		
 		// Execute request silently
 		if( options && options.silent ) {
 			
-			options.silent = void 0;
-			
 			return this.execute( url, options );
 		}
 		
-		// With pushState, handle url delegation automatically
+		// For pushState we got to change the url and execute the given url
 		if( this.pushstate && pushState ) {
 			
-			history.pushState('', '', url);
+			window.history.pushState('', '', url);
 			this.execute( url );
 		}
-		// Hashbang
+		// Set the new hashbang
 		else {
 			
 			window.location.hash = '!'+url;
@@ -81,29 +81,35 @@ pbMvc.Request = PB.Class({
 	 */
 	execute: function ( url, params ) {
 		
-//		console.log( arguments[0], PB.type(arguments[0]) === 'popstateevent' );
-		
 		if( !PB.is('String', url) ) {
 			
+			// Use pathname for pushstate applications
 			url = this.pushstate && pushState
 				? window.location.pathname	// -> Strip baseUrl
 				: window.location.hash;
 		}
 		
-		// Remove basePath
-		url = url.trimLeft('#');
-		url = url.trimLeft('!');
-		url = url.trimLeft(this.basePath);
+		// Trim
+		url = url.replace(/^[#!\/\s]+/g, '')
+			.replace(/\/\/+/g, '/')
+			.replace(/^\/|\/$/g, '');
 		
+		// Do not trigger same request twice
+		if( url === this.history.current().url ) {
+			
+			return;
+		}
+		
+		// Get matches and extend with params
 		params = PB.extend( this.matchRoute( url ), params );
-
+		
+		// No routing matched
 		if( !params ) {
 
 			console.log('Request did not match any route');
 			return;
 		}
 
-		//
 		var action = this.prefix+params.action,
 			controllerName = params.controller,
 			controller,
@@ -116,9 +122,10 @@ pbMvc.Request = PB.Class({
 			return;
 		}
 		
+		// Ref to prototype
 		proto = pbMvc.Controller[controllerName].prototype;
 
-		// Does the given controller has the required action?
+		// Does the given controller has the called action?
 		if( !proto[action] ) {
 
 			console.exception( '`'+action+'` not found in `'+controller+'`' );
@@ -127,45 +134,40 @@ pbMvc.Request = PB.Class({
 
 		// read cache
 		controller = this.cache[controllerName];
-
+		
 		if( !controller ) {
 			
 			// Create new instance
 			controller = this.cache[controllerName] = new pbMvc.Controller[controllerName];
 		}
 		
-		if( this.history.length && controllerName !== this.history[this.history.length-1].controller ) {
+		/*if( this._history.length && controllerName !== this._history[this._history.length-1].controller ) {
 			
 			// Previous called controller will always be in cache
-			prevController = this.cache[this.history[this.history.length-1].controller];
+			prevController = this.cache[this._history[this._history.length-1].controller];
 
 			if( PB.is('Function', prevController.change) ) {
 
 				prevController.change( params );
 			}
-		}
+		}*/
 		
-		// Execute before methods if existing
-		if( PB.is('Function', proto.before) ) {
+		// Execute before method
+		if( PB.type(proto.before) === 'function' ) {
 			
 			controller.before( params );
 		}
 		
-		// Execute the requested method
+		// Add request to history, before execution of action and after the before method
+		this.history.push(url, params);
+		
+		// Execute the requested action
 		controller[action]( params );
 		
-		// Execute after methods if existing
-		if( PB.is('Function', proto.after) ) {
+		// Execute after method
+		if( PB.type(proto.after) === 'function' ) {
 			
 			controller.after( params );
-		}
-		
-		// Add to history
-		this.history.push( params );
-		
-		if( this.history.length > this.historyLimit ) {
-			
-			this.history.shift();
 		}
 
 		return this;
@@ -181,16 +183,11 @@ pbMvc.Request = PB.Class({
 
 		var parts;
 
-		// Trim #
-		url = url.trim('/');
-		url = url.replace(/\/\/+/, '/');
-
 		PB.each(pbMvc.Route.all(), function ( key, _route ) {
 
 			if( parts = _route.matches( url ) ) {
 
-				// Stop loop
-				return true;
+				return true; // Stop iteration
 			}
 			
 			parts = null;
@@ -211,12 +208,5 @@ pbMvc.Request = PB.Class({
 
 			this.execute();
 		}
-	},
-	
-	getHistory: function ( index ) {
-		
-		return index < 0
-			? this.history[index + this.history.length]
-			: this.history[index];
 	}
 });
